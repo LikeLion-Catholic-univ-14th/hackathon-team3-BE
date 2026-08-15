@@ -2,6 +2,7 @@ package com.example.hackathon_team3_be.domain;
 
 import com.example.hackathon_team3_be.domain.DomainEnums.ExperienceStatus;
 import com.example.hackathon_team3_be.domain.DomainEnums.GenerationStatus;
+import com.example.hackathon_team3_be.domain.DomainEnums.InputMode;
 import com.example.hackathon_team3_be.domain.DomainEnums.PurchaseResult;
 import com.example.hackathon_team3_be.domain.DomainEnums.RevealStage;
 import jakarta.persistence.Column;
@@ -55,6 +56,16 @@ public class ExperienceSession {
     private String contexts;
 
     private String lockedAttribute;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private InputMode lastInputMode;
+
+    @Column(length = 2000)
+    private String freeTextInput;
+
+    @Column(length = 2000)
+    private String voiceTranscript;
 
     private String intentPurpose;
     private String intentPriority;

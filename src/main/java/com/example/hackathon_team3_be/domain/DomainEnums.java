@@ -52,4 +52,21 @@ public final class DomainEnums {
         THE_NOMAD,
         THE_UNEXPECTED
     }
+
+    public enum InputMode {
+        CHOICE,
+        TEXT,
+        VOICE,
+        PREVIOUS_SESSION
+    }
+
+    public enum InputStep {
+        SILHOUETTE,
+        STRUCTURE,
+        PROPORTION,
+        COLOR,
+        ATTITUDE,
+        CONTEXTS,
+        LOCKED_ATTRIBUTE
+    }
 }

@@ -3,6 +3,8 @@ package com.example.hackathon_team3_be.api;
 import com.example.hackathon_team3_be.domain.DomainEnums.EditDirection;
 import com.example.hackathon_team3_be.domain.DomainEnums.ExperienceStatus;
 import com.example.hackathon_team3_be.domain.DomainEnums.GenerationStatus;
+import com.example.hackathon_team3_be.domain.DomainEnums.InputMode;
+import com.example.hackathon_team3_be.domain.DomainEnums.InputStep;
 import com.example.hackathon_team3_be.domain.DomainEnums.PurchaseResult;
 import com.example.hackathon_team3_be.domain.DomainEnums.ReservationStatus;
 import com.example.hackathon_team3_be.domain.DomainEnums.RevealStage;
@@ -16,6 +18,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public final class ApiDtos {
@@ -68,6 +71,57 @@ public final class ApiDtos {
     ) {
     }
 
+    public record ChoiceOptionResponse(String value, String label) {
+    }
+
+    public record ChoiceStepResponse(
+            InputStep step,
+            String title,
+            String prompt,
+            boolean multiple,
+            List<ChoiceOptionResponse> options
+    ) {
+    }
+
+    public record PreferenceCatalogResponse(List<ChoiceStepResponse> steps) {
+    }
+
+    public record ChoiceInputRequest(
+            @NotNull InputStep step,
+            @NotEmpty @Size(max = 4) List<@NotBlank String> values
+    ) {
+    }
+
+    public record TextInputRequest(@NotBlank @Size(max = 2000) String text) {
+    }
+
+    public record ContinuePreferenceRequest(UUID sourceSessionId) {
+    }
+
+    public record InputProgressResponse(
+            int completedSteps,
+            int totalSteps,
+            int percent,
+            InputStep nextStep,
+            String nextPrompt,
+            boolean readyForIntent,
+            int recommendedTransitionDelayMs,
+            String paceMessage,
+            InputMode lastInputMode,
+            PreferenceResponse preferences
+    ) {
+    }
+
+    public record InputInterpretationResponse(
+            InputMode inputMode,
+            String transcript,
+            String transcriptionSource,
+            Map<String, List<String>> extracted,
+            List<String> appliedFields,
+            InputProgressResponse progress
+    ) {
+    }
+
     public record IntentProfileResponse(
             String purpose,
             String priority,
@@ -95,6 +149,12 @@ public final class ApiDtos {
 
     public record ReservationRequest(
             @NotNull UUID sessionId,
+            @NotNull Long storeId,
+            @NotNull @Future LocalDateTime scheduledAt
+    ) {
+    }
+
+    public record ReservationUpdateRequest(
             @NotNull Long storeId,
             @NotNull @Future LocalDateTime scheduledAt
     ) {

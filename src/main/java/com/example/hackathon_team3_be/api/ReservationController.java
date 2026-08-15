@@ -2,6 +2,7 @@ package com.example.hackathon_team3_be.api;
 
 import com.example.hackathon_team3_be.api.ApiDtos.ReservationRequest;
 import com.example.hackathon_team3_be.api.ApiDtos.ReservationResponse;
+import com.example.hackathon_team3_be.api.ApiDtos.ReservationUpdateRequest;
 import com.example.hackathon_team3_be.api.ApiDtos.SlotResponse;
 import com.example.hackathon_team3_be.api.ApiDtos.StoreResponse;
 import com.example.hackathon_team3_be.service.ReservationService;
@@ -10,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -46,5 +49,19 @@ public class ReservationController {
     @GetMapping("/sessions/{sessionId}/reservation")
     ReservationResponse reservation(@PathVariable UUID sessionId) {
         return reservationService.getBySession(sessionId);
+    }
+
+    @PatchMapping("/reservations/{reservationId}")
+    ReservationResponse update(
+            @PathVariable UUID reservationId,
+            @Valid @RequestBody ReservationUpdateRequest request
+    ) {
+        return reservationService.update(reservationId, request);
+    }
+
+    @DeleteMapping("/reservations/{reservationId}")
+    ResponseEntity<Void> cancel(@PathVariable UUID reservationId) {
+        reservationService.cancel(reservationId);
+        return ResponseEntity.noContent().build();
     }
 }

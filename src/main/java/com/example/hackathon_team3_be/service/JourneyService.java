@@ -48,6 +48,9 @@ public class JourneyService {
     @Transactional
     public SessionResponse savePreferences(UUID sessionId, PreferenceRequest request) {
         ExperienceSession session = findSession(sessionId);
+        if (session.getStatus().ordinal() >= ExperienceStatus.RESERVED.ordinal()) {
+            throw new InvalidStateException("예약 이후에는 취향 입력을 변경할 수 없습니다.");
+        }
         session.setSilhouette(request.silhouette().trim());
         session.setStructurePreference(request.structure().trim());
         session.setProportion(request.proportion().trim());
@@ -116,6 +119,7 @@ public class JourneyService {
     @Transactional(readOnly = true)
     public CustomerMemoryResponse getMemory(String demoCustomerId) {
         List<MemoryItem> items = sessionRepository.findByDemoCustomerIdOrderByCreatedAtDesc(demoCustomerId).stream()
+                .filter(ExperienceSession::isDataConsent)
                 .filter(session -> session.getPurchaseResult() != null)
                 .map(session -> new MemoryItem(
                         session.getId(),
@@ -138,7 +142,13 @@ public class JourneyService {
     }
 
     private void requirePreferences(ExperienceSession session) {
-        if (session.getSilhouette() == null || session.getContexts() == null) {
+        if (session.getSilhouette() == null
+                || session.getStructurePreference() == null
+                || session.getProportion() == null
+                || session.getColor() == null
+                || session.getAttitude() == null
+                || session.getContexts() == null
+                || session.getLockedAttribute() == null) {
             throw new InvalidStateException("취향 정보를 먼저 저장해 주세요.");
         }
     }
@@ -155,6 +165,8 @@ public class JourneyService {
         session.setUnseenImageUrl(null);
         session.setUnseenPrompt(null);
         session.setUnseenError(null);
+        session.setAdvisorPriority(null);
+        session.setRevealStage(com.example.hackathon_team3_be.domain.DomainEnums.RevealStage.NOT_STARTED);
     }
 
     private String join(List<String> values) {
