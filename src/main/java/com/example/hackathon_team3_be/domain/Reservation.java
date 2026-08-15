@@ -28,7 +28,10 @@ import java.util.UUID;
 @Entity
 @Table(
         name = "reservations",
-        uniqueConstraints = @UniqueConstraint(name = "uk_store_schedule", columnNames = {"store_id", "scheduled_at"})
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_store_schedule_status",
+                columnNames = {"store_id", "scheduled_at", "status"}
+        )
 )
 public class Reservation {
 
