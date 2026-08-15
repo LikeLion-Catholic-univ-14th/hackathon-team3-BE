@@ -36,7 +36,13 @@ public final class ApiMapper {
     }
 
     public static PreferenceResponse toPreference(ExperienceSession session) {
-        if (session.getSilhouette() == null) {
+        if (session.getSilhouette() == null
+                && session.getStructurePreference() == null
+                && session.getProportion() == null
+                && session.getColor() == null
+                && session.getAttitude() == null
+                && session.getContexts() == null
+                && session.getLockedAttribute() == null) {
             return null;
         }
         return new PreferenceResponse(

@@ -1,0 +1,1144 @@
+openapi: 3.0.3
+info:
+  title: MCM Re:SENSE API
+  version: 1.0.0
+  description: Customer Web, Advisor Web, Store Reveal을 sessionId로 연결하는 해커톤 MVP API
+servers:
+  - url: http://localhost:8080/api/v1
+tags:
+  - name: Customer
+  - name: Input
+  - name: AI
+  - name: Reservation
+  - name: Advisor
+  - name: Reveal
+  - name: Feedback
+  - name: Asset
+paths:
+  /sessions:
+    post:
+      tags: [Customer]
+      summary: 경험 세션 생성
+      operationId: createSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+      responses:
+        '201':
+          description: 생성 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /sessions/{sessionId}:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    get:
+      tags: [Customer]
+      summary: 전체 세션 조회
+      operationId: getSession
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /preference-options:
+    get:
+      tags: [Input]
+      summary: 선택지 기반 취향 입력 카탈로그 조회
+      operationId: getPreferenceOptions
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreferenceCatalogResponse'
+  /sessions/{sessionId}/input-progress:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    get:
+      tags: [Input]
+      summary: 입력 진행률과 다음 질문 조회
+      operationId: getInputProgress
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputProgressResponse'
+  /sessions/{sessionId}/inputs/choice:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    post:
+      tags: [Input]
+      summary: 선택지 한 단계 저장
+      operationId: saveChoiceInput
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChoiceInputRequest'
+      responses:
+        '200':
+          description: 저장 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputInterpretationResponse'
+        '422':
+          $ref: '#/components/responses/InvalidState'
+  /sessions/{sessionId}/inputs/text:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    post:
+      tags: [Input]
+      summary: 자유 텍스트에서 취향을 해석해 빈 필드에 병합
+      operationId: saveTextInput
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TextInputRequest'
+      responses:
+        '200':
+          description: 해석 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputInterpretationResponse'
+  /sessions/{sessionId}/inputs/voice:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    post:
+      tags: [Input]
+      summary: 음성 인식 후 취향을 해석해 빈 필드에 병합
+      operationId: saveVoiceInput
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                audio:
+                  type: string
+                  format: binary
+                browserTranscript:
+                  type: string
+                language:
+                  type: string
+                  default: ko
+      responses:
+        '200':
+          description: 인식/해석 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputInterpretationResponse'
+        '422':
+          $ref: '#/components/responses/InvalidState'
+  /sessions/{sessionId}/preferences/continue:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    post:
+      tags: [Input]
+      summary: 같은 고객의 동의된 이전 취향 이어가기
+      operationId: continuePreferences
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContinuePreferenceRequest'
+      responses:
+        '200':
+          description: 적용 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputInterpretationResponse'
+  /sessions/{sessionId}/preferences:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    put:
+      tags: [Customer]
+      summary: 취향 저장 또는 덮어쓰기
+      description: 기존 취향을 변경하면 하위 Intent와 UNSEEN 결과가 초기화됩니다.
+      operationId: savePreferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreferenceRequest'
+      responses:
+        '200':
+          description: 저장 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /sessions/{sessionId}/intent:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    post:
+      tags: [AI]
+      summary: Intent Profile 생성
+      operationId: interpretIntent
+      responses:
+        '200':
+          description: 생성 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntentProfileResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/InvalidState'
+  /sessions/{sessionId}/unseen:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    post:
+      tags: [AI]
+      summary: 비동기 UNSEEN 생성 요청
+      operationId: requestUnseen
+      responses:
+        '202':
+          description: 생성 요청 접수
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnseenResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/InvalidState'
+    get:
+      tags: [AI]
+      summary: UNSEEN 생성 상태 조회
+      operationId: getUnseen
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnseenResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /stores:
+    get:
+      tags: [Reservation]
+      summary: 예약 가능 매장 조회
+      operationId: getStores
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StoreResponse'
+  /stores/{storeId}/slots:
+    get:
+      tags: [Reservation]
+      summary: 날짜별 예약 슬롯 조회
+      operationId: getSlots
+      parameters:
+        - name: storeId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SlotResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /reservations:
+    post:
+      tags: [Reservation]
+      summary: 매장 경험 예약
+      operationId: createReservation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationRequest'
+      responses:
+        '201':
+          description: 예약 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/InvalidState'
+  /reservations/{reservationId}:
+    parameters:
+      - name: reservationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      tags: [Reservation]
+      summary: 방문 전 예약 변경
+      operationId: updateReservation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationUpdateRequest'
+      responses:
+        '200':
+          description: 변경 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservationResponse'
+    delete:
+      tags: [Reservation]
+      summary: 방문 전 예약 취소
+      operationId: cancelReservation
+      responses:
+        '204':
+          description: 취소 성공
+  /sessions/{sessionId}/reservation:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    get:
+      tags: [Reservation]
+      summary: 세션 예약 조회
+      operationId: getReservation
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservationResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /advisor/appointments:
+    get:
+      tags: [Advisor]
+      summary: Advisor 예약 목록 조회
+      operationId: getAppointments
+      parameters:
+        - name: date
+          in: query
+          required: false
+          description: 생략하면 서버 기준 오늘
+          schema:
+            type: string
+            format: date
+        - name: storeId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AppointmentResponse'
+  /advisor/passes/{passCode}/recognize:
+    post:
+      tags: [Advisor]
+      summary: UNSEEN PASS 인식 및 도착 처리
+      operationId: recognizePass
+      parameters:
+        - name: passCode
+          in: path
+          required: true
+          schema:
+            type: string
+          example: PASS-82D1FC80
+      responses:
+        '200':
+          description: 인식 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PassRecognitionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/InvalidState'
+  /advisor/sessions/{sessionId}/intent-card:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    get:
+      tags: [Advisor]
+      summary: Advisor Intent Card 조회
+      operationId: getIntentCard
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntentCardResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /advisor/sessions/{sessionId}/touch:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    patch:
+      tags: [Advisor]
+      summary: 오늘의 우선순위 보정
+      operationId: advisorTouch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdvisorTouchRequest'
+      responses:
+        '200':
+          description: 보정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntentCardResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /advisor/sessions/{sessionId}/personal-edits:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    post:
+      tags: [Advisor]
+      summary: Personal Edit 3방향 생성
+      operationId: generatePersonalEdits
+      responses:
+        '200':
+          description: 생성 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalEditResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/InvalidState'
+    get:
+      tags: [Advisor]
+      summary: Personal Edit 조회
+      operationId: getPersonalEdits
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PersonalEditResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /reveal/sessions/{sessionId}:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    get:
+      tags: [Reveal]
+      summary: 현재 Reveal 상태 조회
+      operationId: getRevealState
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevealResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /reveal/sessions/{sessionId}/events:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    get:
+      tags: [Reveal]
+      summary: Reveal 상태 SSE 구독
+      operationId: subscribeReveal
+      responses:
+        '200':
+          description: 이벤트 이름은 reveal-state이며 COMPLETED 후 연결이 종료됩니다.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /reveal/sessions/{sessionId}/start:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    post:
+      tags: [Reveal]
+      summary: Reveal 시작
+      operationId: startReveal
+      responses:
+        '200':
+          description: 시작 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevealResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/InvalidState'
+  /reveal/sessions/{sessionId}/advance:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    post:
+      tags: [Reveal]
+      summary: 다음 Reveal 단계 실행
+      operationId: advanceReveal
+      responses:
+        '200':
+          description: 전환 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevealResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/InvalidState'
+  /sessions/{sessionId}/feedback:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    post:
+      tags: [Feedback]
+      summary: 구매 결과와 Loved/Concern/Wants 저장
+      operationId: saveFeedback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackRequest'
+      responses:
+        '200':
+          description: 저장 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /customers/{demoCustomerId}/memory:
+    get:
+      tags: [Feedback]
+      summary: 데모 고객의 과거 경험 조회
+      operationId: getCustomerMemory
+      parameters:
+        - name: demoCustomerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 최신순 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerMemoryResponse'
+  /assets/unseen/{unseenId}.svg:
+    get:
+      tags: [Asset]
+      summary: 데모 UNSEEN SVG 이미지
+      operationId: getUnseenAsset
+      parameters:
+        - name: unseenId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: SVG 이미지
+          content:
+            image/svg+xml:
+              schema:
+                type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /assets/products/{sku}.svg:
+    get:
+      tags: [Asset]
+      summary: 데모 상품 SVG 이미지
+      operationId: getProductAsset
+      parameters:
+        - name: sku
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: SVG 이미지
+          content:
+            image/svg+xml:
+              schema:
+                type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  parameters:
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    BadRequest:
+      description: 요청값 검증 실패
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    NotFound:
+      description: 리소스를 찾을 수 없음
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    Conflict:
+      description: 예약 충돌
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+    InvalidState:
+      description: 현재 Journey 상태에서 처리할 수 없음
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+  schemas:
+    ExperienceStatus:
+      type: string
+      enum: [CREATED, PREFERENCES_SAVED, INTENT_READY, UNSEEN_PROCESSING, UNSEEN_READY, RESERVED, ARRIVED, PERSONAL_EDIT_READY, REVEALING, COMPLETED]
+    GenerationStatus:
+      type: string
+      enum: [NOT_STARTED, PROCESSING, READY, FAILED]
+    ReservationStatus:
+      type: string
+      enum: [BOOKED, ARRIVED, COMPLETED, CANCELLED]
+    RevealStage:
+      type: string
+      enum: [NOT_STARTED, WELCOME, UNSEEN_REVEAL, LIFESTYLE_SCENE, FINAL_TRANSITION, COMPLETED]
+    PurchaseResult:
+      type: string
+      enum: [PURCHASED, NOT_PURCHASED, UNDECIDED]
+    EditDirection:
+      type: string
+      enum: [THE_EVERYDAY, THE_NOMAD, THE_UNEXPECTED]
+    InputMode:
+      type: string
+      enum: [CHOICE, TEXT, VOICE, PREVIOUS_SESSION]
+    InputStep:
+      type: string
+      enum: [SILHOUETTE, STRUCTURE, PROPORTION, COLOR, ATTITUDE, CONTEXTS, LOCKED_ATTRIBUTE]
+    CreateSessionRequest:
+      type: object
+      required: [demoCustomerId, customerName, dataConsent]
+      properties:
+        demoCustomerId:
+          type: string
+          maxLength: 80
+          example: demo-lena
+        customerName:
+          type: string
+          maxLength: 80
+          example: Lena
+        dataConsent:
+          type: boolean
+          example: true
+    PreferenceRequest:
+      type: object
+      required: [silhouette, structure, proportion, color, attitude, contexts, lockedAttribute]
+      properties:
+        silhouette:
+          type: string
+          example: Crossbody
+        structure:
+          type: string
+          example: Soft
+        proportion:
+          type: string
+          example: Compact-Spacious
+        color:
+          type: string
+          example: Cognac
+        attitude:
+          type: string
+          example: Quiet
+        contexts:
+          type: array
+          minItems: 1
+          items:
+            type: string
+          example: [Work, Travel]
+        lockedAttribute:
+          type: string
+          example: Shape
+    PreferenceResponse:
+      allOf:
+        - $ref: '#/components/schemas/PreferenceRequest'
+    ChoiceInputRequest:
+      type: object
+      required: [step, values]
+      properties:
+        step:
+          $ref: '#/components/schemas/InputStep'
+        values:
+          type: array
+          minItems: 1
+          maxItems: 4
+          items:
+            type: string
+    TextInputRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          maxLength: 2000
+    ContinuePreferenceRequest:
+      type: object
+      properties:
+        sourceSessionId:
+          type: string
+          format: uuid
+          nullable: true
+    ChoiceOptionResponse:
+      type: object
+      properties:
+        value: {type: string}
+        label: {type: string}
+    ChoiceStepResponse:
+      type: object
+      properties:
+        step: {$ref: '#/components/schemas/InputStep'}
+        title: {type: string}
+        prompt: {type: string}
+        multiple: {type: boolean}
+        options:
+          type: array
+          items: {$ref: '#/components/schemas/ChoiceOptionResponse'}
+    PreferenceCatalogResponse:
+      type: object
+      properties:
+        steps:
+          type: array
+          items: {$ref: '#/components/schemas/ChoiceStepResponse'}
+    InputProgressResponse:
+      type: object
+      properties:
+        completedSteps: {type: integer}
+        totalSteps: {type: integer}
+        percent: {type: integer}
+        nextStep:
+          allOf: [{$ref: '#/components/schemas/InputStep'}]
+          nullable: true
+        nextPrompt: {type: string, nullable: true}
+        readyForIntent: {type: boolean}
+        recommendedTransitionDelayMs: {type: integer}
+        paceMessage: {type: string}
+        lastInputMode:
+          allOf: [{$ref: '#/components/schemas/InputMode'}]
+          nullable: true
+        preferences:
+          allOf: [{$ref: '#/components/schemas/PreferenceResponse'}]
+          nullable: true
+    InputInterpretationResponse:
+      type: object
+      properties:
+        inputMode: {$ref: '#/components/schemas/InputMode'}
+        transcript: {type: string, nullable: true}
+        transcriptionSource: {type: string, nullable: true}
+        extracted:
+          type: object
+          additionalProperties:
+            type: array
+            items: {type: string}
+        appliedFields:
+          type: array
+          items: {type: string}
+        progress: {$ref: '#/components/schemas/InputProgressResponse'}
+    IntentProfileResponse:
+      type: object
+      properties:
+        purpose:
+          type: string
+          example: Work + Travel
+        priority:
+          type: string
+          example: Mobility / Lightweight
+        style:
+          type: string
+          example: Relaxed / Modern
+        signature:
+          type: string
+          example: Soft Structure / Cognac
+        lockedAttribute:
+          type: string
+          example: Shape
+        concern:
+          type: string
+          example: Styling Versatility
+        summary:
+          type: string
+    UnseenResponse:
+      type: object
+      properties:
+        unseenId:
+          type: string
+          nullable: true
+          example: UNSEEN-50256B70
+        status:
+          $ref: '#/components/schemas/GenerationStatus'
+        imageUrl:
+          type: string
+          nullable: true
+          example: /api/v1/assets/unseen/UNSEEN-50256B70.svg
+        error:
+          type: string
+          nullable: true
+    SessionResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        demoCustomerId:
+          type: string
+        customerName:
+          type: string
+        dataConsent:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/ExperienceStatus'
+        preferences:
+          allOf:
+            - $ref: '#/components/schemas/PreferenceResponse'
+          nullable: true
+        intentProfile:
+          allOf:
+            - $ref: '#/components/schemas/IntentProfileResponse'
+          nullable: true
+        unseen:
+          $ref: '#/components/schemas/UnseenResponse'
+        advisorPriority:
+          type: string
+          nullable: true
+        revealStage:
+          $ref: '#/components/schemas/RevealStage'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    StoreResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        city:
+          type: string
+        address:
+          type: string
+    SlotResponse:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        scheduledAt:
+          type: string
+          format: date-time
+        available:
+          type: boolean
+    ReservationRequest:
+      type: object
+      required: [sessionId, storeId, scheduledAt]
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        storeId:
+          type: integer
+          format: int64
+        scheduledAt:
+          type: string
+          format: date-time
+    ReservationUpdateRequest:
+      type: object
+      required: [storeId, scheduledAt]
+      properties:
+        storeId:
+          type: integer
+          format: int64
+        scheduledAt:
+          type: string
+          format: date-time
+    ReservationResponse:
+      type: object
+      properties:
+        reservationId:
+          type: string
+          format: uuid
+        sessionId:
+          type: string
+          format: uuid
+        storeId:
+          type: integer
+          format: int64
+        storeName:
+          type: string
+        scheduledAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/ReservationStatus'
+        passCode:
+          type: string
+          example: PASS-82D1FC80
+    AppointmentResponse:
+      type: object
+      properties:
+        reservation:
+          $ref: '#/components/schemas/ReservationResponse'
+        customerName:
+          type: string
+        unseenId:
+          type: string
+        intentSummary:
+          type: string
+    AdvisorTouchRequest:
+      type: object
+      required: [priority]
+      properties:
+        priority:
+          type: string
+          maxLength: 100
+          example: Styling
+    IntentCardResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        customerName:
+          type: string
+        unseenId:
+          type: string
+        unseenImageUrl:
+          type: string
+        intentProfile:
+          $ref: '#/components/schemas/IntentProfileResponse'
+        advisorPriority:
+          type: string
+          nullable: true
+        reservation:
+          $ref: '#/components/schemas/ReservationResponse'
+    AdvisorEditItem:
+      type: object
+      properties:
+        editId:
+          type: string
+          format: uuid
+        direction:
+          $ref: '#/components/schemas/EditDirection'
+        productId:
+          type: integer
+          format: int64
+        sku:
+          type: string
+        productName:
+          type: string
+        productImageUrl:
+          type: string
+        strap:
+          type: string
+        accessory:
+          type: string
+        rationale:
+          type: string
+    PersonalEditResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        edits:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdvisorEditItem'
+    PassRecognitionResponse:
+      type: object
+      properties:
+        recognized:
+          type: boolean
+        sessionId:
+          type: string
+          format: uuid
+        customerName:
+          type: string
+        unseenId:
+          type: string
+        reservation:
+          $ref: '#/components/schemas/ReservationResponse'
+    RevealResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        stage:
+          $ref: '#/components/schemas/RevealStage'
+        sessionStatus:
+          $ref: '#/components/schemas/ExperienceStatus'
+    FeedbackRequest:
+      type: object
+      required: [result]
+      properties:
+        loved:
+          type: array
+          items:
+            type: string
+        concerns:
+          type: array
+          items:
+            type: string
+        wants:
+          type: array
+          items:
+            type: string
+        result:
+          $ref: '#/components/schemas/PurchaseResult'
+        purchasedProductId:
+          type: integer
+          format: int64
+          nullable: true
+    FeedbackResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        result:
+          $ref: '#/components/schemas/PurchaseResult'
+        status:
+          $ref: '#/components/schemas/ExperienceStatus'
+    MemoryItem:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        unseenId:
+          type: string
+        intentSummary:
+          type: string
+        loved:
+          type: array
+          items:
+            type: string
+        concerns:
+          type: array
+          items:
+            type: string
+        wants:
+          type: array
+          items:
+            type: string
+        result:
+          $ref: '#/components/schemas/PurchaseResult'
+        experiencedAt:
+          type: string
+          format: date-time
+    CustomerMemoryResponse:
+      type: object
+      properties:
+        demoCustomerId:
+          type: string
+        experiences:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemoryItem'
+    ApiError:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+        fields:
+          type: object
+          additionalProperties:
+            type: string
