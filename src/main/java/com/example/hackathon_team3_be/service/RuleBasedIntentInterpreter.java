@@ -17,9 +17,14 @@ public class RuleBasedIntentInterpreter implements IntentInterpreter {
         String priority = normalizedContext.contains("travel") || normalizedContext.contains("여행")
                 ? "Mobility / Lightweight"
                 : "Daily Versatility / Comfort";
-        String style = normalizedAttitude.contains("quiet") || normalizedAttitude.contains("차분")
-                ? "Relaxed / Modern"
-                : "Expressive / Contemporary";
+        String style;
+        if (normalizedAttitude.contains("quiet") || normalizedAttitude.contains("차분")) {
+            style = "Quiet / Minimal";
+        } else if (normalizedAttitude.contains("refined") || normalizedAttitude.contains("세련")) {
+            style = "Refined / Elegant";
+        } else {
+            style = "Iconic / Expressive";
+        }
         String signature = session.getStructurePreference() + " Structure / " + session.getColor();
         String concern = session.getLockedAttribute().toLowerCase(Locale.ROOT).contains("shape")
                 || session.getLockedAttribute().contains("형태")

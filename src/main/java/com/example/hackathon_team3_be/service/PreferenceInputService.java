@@ -41,13 +41,14 @@ public class PreferenceInputService {
                     option("Top Handle", "탑 핸들"),
                     option("Mini Bag", "미니백")),
             step(InputStep.STRUCTURE, "구조감", "가방의 형태감은 어느 쪽이 편한가요?", false,
-                    option("Soft", "부드러운"), option("Semi-structured", "적당한 구조감"), option("Structured", "각이 잡힌")),
+                    option("Soft", "부드러운 / 라운드"), option("Balanced", "균형 잡힌"), option("Structured", "각이 잡힌")),
             step(InputStep.PROPORTION, "수납 비율", "평소 필요한 수납 크기를 골라 주세요.", false,
                     option("Compact", "컴팩트"), option("Balanced", "균형형"), option("Spacious", "넉넉한")),
             step(InputStep.COLOR, "컬러", "오늘 가장 끌리는 컬러는 무엇인가요?", false,
-                    option("Cognac", "코냑 브라운"), option("Black", "블랙"), option("Cream", "크림"), option("Red", "레드")),
+                    option("Cognac", "코냑"), option("Black", "블랙"), option("Blush", "블러시 핑크"),
+                    option("Cream", "크림"), option("Gray", "그레이")),
             step(InputStep.ATTITUDE, "무드", "원하는 인상을 골라 주세요.", false,
-                    option("Quiet", "차분한"), option("Balanced", "절제된 포인트"), option("Expressive", "대담한")),
+                    option("Quiet", "차분한"), option("Refined", "세련된"), option("Iconic", "아이코닉한")),
             step(InputStep.CONTEXTS, "사용 장면", "어떤 장면에서 주로 들고 싶나요? (복수 선택)", true,
                     option("Work", "출근/업무"), option("Daily", "일상"), option("Weekend", "주말"), option("Travel", "여행")),
             step(InputStep.LOCKED_ATTRIBUTE, "꼭 지킬 한 가지", "추천에서 절대 놓치고 싶지 않은 조건은 무엇인가요?", false,
@@ -158,17 +159,21 @@ public class PreferenceInputService {
                         "Top Handle", List.of("top handle", "탑핸들", "탑 핸들"),
                         "Mini Bag", List.of("mini bag", "미니백", "미니 백")));
         matchOne(result, InputStep.STRUCTURE, normalized,
-                Map.of("Soft", List.of("soft", "부드러", "부드럽"), "Semi-structured", List.of("semi", "적당한 구조"),
+                Map.of("Soft", List.of("soft", "round", "부드러", "부드럽", "라운드"),
+                        "Balanced", List.of("balanced", "semi-structured", "semi structured", "균형", "적당한 구조"),
                         "Structured", List.of("structured", "각이 잡", "각진")));
         matchOne(result, InputStep.PROPORTION, normalized,
                 Map.of("Compact", List.of("compact", "컴팩트", "작은"), "Balanced", List.of("balanced", "균형"),
                         "Spacious", List.of("spacious", "넉넉", "수납이 큰")));
         matchOne(result, InputStep.COLOR, normalized,
                 Map.of("Cognac", List.of("cognac", "코냑", "브라운"), "Black", List.of("black", "블랙", "검정"),
-                        "Cream", List.of("cream", "크림", "아이보리"), "Red", List.of("red", "레드", "빨강")));
+                        "Blush", List.of("blush", "pink", "블러시", "핑크"),
+                        "Cream", List.of("cream", "크림", "아이보리"),
+                        "Gray", List.of("gray", "grey", "그레이", "회색")));
         matchOne(result, InputStep.ATTITUDE, normalized,
-                Map.of("Quiet", List.of("quiet", "차분", "조용"), "Balanced", List.of("절제", "은은한 포인트"),
-                        "Expressive", List.of("expressive", "대담", "강렬")));
+                Map.of("Quiet", List.of("quiet", "차분", "조용"),
+                        "Refined", List.of("refined", "세련", "정제", "절제"),
+                        "Iconic", List.of("iconic", "아이코닉", "상징적", "대담", "강렬")));
         matchMany(result, InputStep.CONTEXTS, normalized,
                 Map.of("Work", List.of("work", "출근", "업무"), "Daily", List.of("daily", "일상"),
                         "Weekend", List.of("weekend", "주말"), "Travel", List.of("travel", "여행")));
