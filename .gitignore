@@ -39,3 +39,5 @@ out/
 ### Local secrets and logs ###
 *.log
 .env
+
+.gradle-codex/

@@ -35,7 +35,11 @@ public class PreferenceInputService {
 
     private static final List<ChoiceStepResponse> STEPS = List.of(
             step(InputStep.SILHOUETTE, "실루엣", "어떤 형태가 가장 먼저 눈에 들어오나요?", false,
-                    option("Crossbody", "크로스바디"), option("Tote", "토트"), option("Hobo", "호보"), option("Backpack", "백팩")),
+                    option("Shopper & Tote", "쇼퍼 & 토트"),
+                    option("Shoulder & Crossbody", "숄더 & 크로스바디"),
+                    option("Backpack & Belt Bag", "백팩 & 벨트백"),
+                    option("Top Handle", "탑 핸들"),
+                    option("Mini Bag", "미니백")),
             step(InputStep.STRUCTURE, "구조감", "가방의 형태감은 어느 쪽이 편한가요?", false,
                     option("Soft", "부드러운"), option("Semi-structured", "적당한 구조감"), option("Structured", "각이 잡힌")),
             step(InputStep.PROPORTION, "수납 비율", "평소 필요한 수납 크기를 골라 주세요.", false,
@@ -147,8 +151,12 @@ public class PreferenceInputService {
         String normalized = text.toLowerCase(Locale.ROOT);
         Map<InputStep, List<String>> result = new EnumMap<>(InputStep.class);
         matchOne(result, InputStep.SILHOUETTE, normalized,
-                Map.of("Crossbody", List.of("crossbody", "크로스바디"), "Tote", List.of("tote", "토트"),
-                        "Hobo", List.of("hobo", "호보"), "Backpack", List.of("backpack", "백팩")));
+                Map.of(
+                        "Shopper & Tote", List.of("shopper", "tote", "쇼퍼", "토트"),
+                        "Shoulder & Crossbody", List.of("shoulder", "crossbody", "숄더", "크로스바디"),
+                        "Backpack & Belt Bag", List.of("backpack", "belt bag", "백팩", "벨트백", "벨트 백"),
+                        "Top Handle", List.of("top handle", "탑핸들", "탑 핸들"),
+                        "Mini Bag", List.of("mini bag", "미니백", "미니 백")));
         matchOne(result, InputStep.STRUCTURE, normalized,
                 Map.of("Soft", List.of("soft", "부드러", "부드럽"), "Semi-structured", List.of("semi", "적당한 구조"),
                         "Structured", List.of("structured", "각이 잡", "각진")));
@@ -310,6 +318,8 @@ public class PreferenceInputService {
         session.setUnseenStatus(GenerationStatus.NOT_STARTED);
         session.setUnseenPublicId(null);
         session.setUnseenImageUrl(null);
+        session.setUnseenImageData(null);
+        session.setUnseenImageContentType(null);
         session.setUnseenPrompt(null);
         session.setUnseenError(null);
         session.setAdvisorPriority(null);

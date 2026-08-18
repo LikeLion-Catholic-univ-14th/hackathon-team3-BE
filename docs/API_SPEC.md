@@ -49,10 +49,10 @@
 | Input | POST | `/sessions/{sessionId}/inputs/voice` | 음성 인식·해석·병합 |
 | Input | POST | `/sessions/{sessionId}/preferences/continue` | 이전 동의 세션 취향 이어가기 |
 | Customer | PUT | `/sessions/{sessionId}/preferences` | 취향 저장/덮어쓰기 |
-| AI | POST | `/sessions/{sessionId}/intent` | Intent Profile 생성 |
+| AI | POST | `/sessions/{sessionId}/intent` | AI Intent Profile 생성, 실패 시 규칙 기반 fallback |
 | AI | POST | `/sessions/{sessionId}/unseen` | 비동기 UNSEEN 생성 요청 |
 | AI | GET | `/sessions/{sessionId}/unseen` | UNSEEN 생성 상태 조회 |
-| Reservation | GET | `/stores` | 예약 가능 매장 조회 |
+| Reservation | GET | `/stores` | 예약 가능 매장 조회, 선택 좌표 전달 시 거리순 추천 |
 | Reservation | GET | `/stores/{storeId}/slots` | 날짜별 시간 슬롯 조회 |
 | Reservation | POST | `/reservations` | 매장 경험 예약 |
 | Reservation | GET | `/sessions/{sessionId}/reservation` | 세션 예약 조회 |
@@ -240,6 +240,22 @@ Response: `200 OK`
 }
 ```
 
+생성 정책:
+
+1. `AI_INTENT_API_URL`과 `AI_INTENT_API_KEY`가 설정되어 있으면 Responses API에 JSON Schema 기반 구조화 출력을 요청합니다.
+2. `AI_INTENT_MAX_ATTEMPTS`만큼 재시도합니다. 기본값은 `2`입니다.
+3. 설정이 없거나 모든 호출이 실패하거나 필수 필드가 누락되면 `RuleBasedIntentInterpreter` 결과로 자동 전환합니다.
+4. fallback이 동작해도 API 상태 코드는 `200 OK`이며 응답 스키마는 동일합니다.
+
+환경변수:
+
+| 이름 | 기본값 | 설명 |
+|---|---|---|
+| `AI_INTENT_API_URL` | 빈 값 | Responses API URL |
+| `AI_INTENT_API_KEY` | 빈 값 | Bearer API Key |
+| `AI_INTENT_MODEL` | `gpt-4o-mini` | Intent 생성 모델 |
+| `AI_INTENT_MAX_ATTEMPTS` | `2` | 최초 요청을 포함한 최대 시도 횟수 |
+
 ### 3.5 UNSEEN 생성 요청
 
 `POST /sessions/{sessionId}/unseen`
@@ -260,6 +276,21 @@ Response: `202 Accepted`
 ```
 
 트랜잭션 커밋 후 비동기로 생성됩니다. 처리 중 재요청하면 새 작업을 중복 생성하지 않고 현재 상태를 반환합니다.
+
+이미지 생성 정책:
+
+1. `IMAGE_API_URL`, `IMAGE_API_KEY`가 있으면 이미지 공급자를 호출합니다.
+2. 공급자는 `data[0].url` 형식으로 결과 URL을 반환해야 합니다.
+3. `IMAGE_MAX_ATTEMPTS`만큼 재시도하며 기본값은 `2`입니다.
+4. 설정 누락, 타임아웃, 비정상 HTTP 응답, URL 누락 시 동적 SVG URL로 fallback합니다.
+5. 외부 이미지 생성과 SVG fallback 모두 정상 결과로 취급하여 `status=READY`를 반환합니다.
+
+| 환경변수 | 기본값 | 설명 |
+|---|---|---|
+| `IMAGE_API_URL` | 빈 값 | 이미지 생성 API URL |
+| `IMAGE_API_KEY` | 빈 값 | Bearer API Key |
+| `IMAGE_MODEL` | `gpt-image-2` | 공급자에 전달할 모델명 |
+| `IMAGE_MAX_ATTEMPTS` | `2` | 최초 요청을 포함한 최대 시도 횟수 |
 
 ### 3.6 UNSEEN 상태 조회
 
@@ -284,6 +315,21 @@ Response: `200 OK`
 
 `GET /stores`
 
+선택 Query Parameter:
+
+| 이름 | 형식 | 규칙 |
+|---|---|---|
+| `latitude` | Double | `-90` 이상 `90` 이하, longitude와 함께 전달 |
+| `longitude` | Double | `-180` 이상 `180` 이하, latitude와 함께 전달 |
+
+좌표를 전달한 예:
+
+`GET /stores?latitude=37.5274&longitude=127.0438`
+
+- 두 좌표를 모두 전달하면 Haversine 거리 기준 오름차순으로 반환합니다.
+- 한 좌표만 전달하거나 범위를 벗어나면 `422 Unprocessable Entity`입니다.
+- 좌표를 생략하면 기존처럼 매장 이름순으로 반환합니다.
+
 Response: `200 OK`
 
 ```json
@@ -292,7 +338,10 @@ Response: `200 OK`
     "id": 1,
     "name": "MCM HAUS SEOUL",
     "city": "Seoul",
-    "address": "7 Dosan-daero 99-gil, Gangnam-gu"
+    "address": "7 Dosan-daero 99-gil, Gangnam-gu",
+    "latitude": 37.5274,
+    "longitude": 127.0438,
+    "distanceKm": 0.0
   }
 ]
 ```
@@ -611,7 +660,7 @@ Response: `200 OK`
 
 Response: `200 OK`, Content-Type `image/svg+xml;charset=UTF-8`.
 
-현재 외부 이미지 생성 API 없이도 데모가 동작하도록 취향 색상과 Intent 정보를 반영한 SVG를 동적으로 반환합니다.
+외부 이미지 생성 API가 설정되지 않았거나 재시도가 모두 실패했을 때 취향 색상과 Intent 정보를 반영한 SVG를 동적으로 반환합니다. 외부 공급자가 URL을 정상 반환하면 `UnseenResponse.imageUrl`은 외부 URL이므로 이 Asset API를 호출하지 않습니다.
 
 ### 8.2 상품 이미지
 

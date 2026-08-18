@@ -141,7 +141,10 @@ public final class ApiDtos {
     ) {
     }
 
-    public record StoreResponse(Long id, String name, String city, String address) {
+    public record StoreResponse(
+            Long id, String name, String city, String address,
+            Double latitude, Double longitude, Double distanceKm
+    ) {
     }
 
     public record SlotResponse(LocalDate date, LocalDateTime scheduledAt, boolean available) {

@@ -33,9 +33,19 @@ public class Store {
     @Column(nullable = false)
     private boolean active = true;
 
+    private Double latitude;
+
+    private Double longitude;
+
     public Store(String name, String city, String address) {
         this.name = name;
         this.city = city;
         this.address = address;
+    }
+
+    public Store(String name, String city, String address, double latitude, double longitude) {
+        this(name, city, address);
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 }

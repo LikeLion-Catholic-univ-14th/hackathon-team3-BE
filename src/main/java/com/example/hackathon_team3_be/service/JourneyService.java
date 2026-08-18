@@ -163,6 +163,8 @@ public class JourneyService {
         session.setUnseenStatus(GenerationStatus.NOT_STARTED);
         session.setUnseenPublicId(null);
         session.setUnseenImageUrl(null);
+        session.setUnseenImageData(null);
+        session.setUnseenImageContentType(null);
         session.setUnseenPrompt(null);
         session.setUnseenError(null);
         session.setAdvisorPriority(null);

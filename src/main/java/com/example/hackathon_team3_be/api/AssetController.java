@@ -36,6 +36,18 @@ public class AssetController {
         return ResponseEntity.ok().contentType(SVG).body(bagSvg(label, detail, fill));
     }
 
+    @GetMapping("/unseen/{unseenId}.png")
+    ResponseEntity<byte[]> generatedUnseen(@PathVariable String unseenId) {
+        ExperienceSession session = sessionRepository.findByUnseenPublicId(unseenId)
+                .orElseThrow(() -> new NotFoundException("UNSEEN 이미지를 찾을 수 없습니다."));
+        if (session.getUnseenImageData() == null || session.getUnseenImageData().length == 0) {
+            throw new NotFoundException("생성된 UNSEEN PNG 이미지를 찾을 수 없습니다.");
+        }
+        MediaType contentType = session.getUnseenImageContentType() == null
+                ? MediaType.IMAGE_PNG : MediaType.parseMediaType(session.getUnseenImageContentType());
+        return ResponseEntity.ok().contentType(contentType).body(session.getUnseenImageData());
+    }
+
     @GetMapping("/products/{sku}.svg")
     ResponseEntity<String> product(@PathVariable String sku) {
         Product product = productRepository.findAll().stream()

@@ -55,6 +55,8 @@ erDiagram
         VARCHAR_80 city
         VARCHAR_300 address
         BOOLEAN active
+        DOUBLE latitude "매장 위도"
+        DOUBLE longitude "매장 경도"
     }
 
     RESERVATIONS {
@@ -101,6 +103,8 @@ erDiagram
 
 예약 테이블에는 `(store_id, scheduled_at, status)` 복합 Unique 제약조건 `uk_store_schedule_status`가 적용됩니다. 활성 예약 중복은 서비스 계층에서도 차단하며, 취소된 슬롯은 다시 예약할 수 있습니다.
 
+`stores.latitude`, `stores.longitude`는 위치 기반 추천에 사용합니다. 고객이 `latitude`, `longitude`를 함께 전달하면 Haversine 공식으로 직선거리를 계산하며, 별도의 추천 결과 테이블을 저장하지 않고 API 응답 시 `distanceKm`를 동적으로 계산합니다.
+
 `experience_sessions.purchased_product_id`는 현재 해커톤 MVP에서 논리 참조값으로만 저장되며 실제 외래키는 아닙니다. 실제 운영 전환 시 `products.id` 외래키로 변경하는 것을 권장합니다.
 
 ## 3. 세션 애그리거트
@@ -126,6 +130,10 @@ flowchart LR
 - 기억: Loved, Concern, Wants, 구매 결과
 
 `contexts`, `feedback_loved`, `feedback_concern`, `feedback_wants`는 현재 파이프 문자(`|`)로 구분해 저장하고 API에서는 배열로 변환합니다.
+
+Intent 생성 경로는 `AiIntentInterpreter`가 외부 Responses API를 호출하고, 설정 누락 또는 재시도 실패 시 `RuleBasedIntentInterpreter`로 전환합니다. 어떤 경로에서 생성되더라도 동일한 Intent 필드에 저장되므로 ERD 변경은 없습니다.
+
+UNSEEN 이미지 생성은 외부 공급자의 URL을 `unseen_image_url`에 저장합니다. 공급자 설정이 없거나 재시도가 모두 실패하면 `/api/v1/assets/unseen/{unseenId}.svg` fallback URL을 저장합니다. 재시도 횟수와 공급자 설정은 애플리케이션 환경변수이며 별도 DB 컬럼으로 저장하지 않습니다.
 
 ## 4. 상태 정의
 

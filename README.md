@@ -31,10 +31,10 @@ Spring Boot 기반 Re:SENSE 해커톤 MVP 백엔드입니다. 고객 웹, Adviso
 - 자유 텍스트 키워드 해석 및 기존 선택값 보존 병합
 - 음성 파일 STT API 연동과 브라우저 transcript 데모 대체 경로
 - 동의한 고객의 이전 취향 이어가기
-- 교체 가능한 `IntentInterpreter`와 기본 규칙 기반 Intent 생성
+- OpenAI Responses API 기반 구조화 Intent 생성과 규칙 기반 fallback
 - 트랜잭션 커밋 이후 비동기 UNSEEN 생성
-- 외부 이미지 API가 없어도 동작하는 동적 SVG 데모 이미지
-- 매장/시간 슬롯 조회 및 중복 예약 방지
+- 이미지 생성 API 2회 재시도와 동적 SVG fallback
+- 위도·경도 기반 가까운 매장 정렬, 시간 슬롯 조회 및 중복 예약 방지
 - 방문 전 예약 변경·취소 및 취소 슬롯 재사용
 - UNSEEN PASS 발급 및 매장 도착 인식
 - Advisor Intent Card와 Advisor Touch
@@ -106,11 +106,19 @@ Spring Boot 기반 Re:SENSE 해커톤 MVP 백엔드입니다. 고객 웹, Adviso
 - `POST /api/v1/sessions/{sessionId}/unseen` - `202 Accepted`
 - `GET /api/v1/sessions/{sessionId}/unseen` - `READY`가 될 때까지 조회
 
-실제 이미지 생성 API를 붙일 때는 `UnseenGenerationService`의 생성 부분만 교체하면 됩니다.
+AI Intent는 다음 환경변수로 설정합니다. 설정이 없거나 호출이 모두 실패하면 규칙 기반 Intent로 자동 전환됩니다.
+
+- `AI_INTENT_API_URL=https://api.openai.com/v1/responses`
+- `AI_INTENT_API_KEY=...`
+- `AI_INTENT_MODEL=gpt-4o-mini`
+- `AI_INTENT_MAX_ATTEMPTS=2`
+
+이미지 API는 `IMAGE_API_URL`, `IMAGE_API_KEY`, `IMAGE_MODEL`, `IMAGE_MAX_ATTEMPTS`로 설정합니다. 공급자가 `data[0].url`을 반환해야 하며, 설정이 없거나 재시도가 모두 실패하면 기존 SVG 이미지가 반환됩니다.
 
 ### 4. 예약
 
 - `GET /api/v1/stores`
+- `GET /api/v1/stores?latitude=37.5274&longitude=127.0438` - `distanceKm` 오름차순
 - `GET /api/v1/stores/{storeId}/slots?date=2026-08-15`
 - `POST /api/v1/reservations`
 - `PATCH /api/v1/reservations/{reservationId}`

@@ -32,8 +32,11 @@ public class ReservationController {
     private final ReservationService reservationService;
 
     @GetMapping("/stores")
-    List<StoreResponse> stores() {
-        return reservationService.getStores();
+    List<StoreResponse> stores(
+            @RequestParam(required = false) Double latitude,
+            @RequestParam(required = false) Double longitude
+    ) {
+        return reservationService.getStores(latitude, longitude);
     }
 
     @GetMapping("/stores/{storeId}/slots")

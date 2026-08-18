@@ -39,10 +39,41 @@ public class ReservationService {
     private final JourneyService journeyService;
 
     @Transactional(readOnly = true)
-    public List<StoreResponse> getStores() {
+    public List<StoreResponse> getStores(Double latitude, Double longitude) {
+        if ((latitude == null) != (longitude == null)) {
+            throw new InvalidStateException("위도와 경도를 함께 보내 주세요.");
+        }
+        if (latitude != null && (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180)) {
+            throw new InvalidStateException("유효한 위도와 경도를 보내 주세요.");
+        }
         return storeRepository.findByActiveTrueOrderByNameAsc().stream()
-                .map(store -> new StoreResponse(store.getId(), store.getName(), store.getCity(), store.getAddress()))
+                .map(store -> toStore(store, latitude, longitude))
+                .sorted((left, right) -> compareDistance(left.distanceKm(), right.distanceKm()))
                 .toList();
+    }
+
+    private StoreResponse toStore(Store store, Double latitude, Double longitude) {
+        Double distance = latitude == null || store.getLatitude() == null || store.getLongitude() == null
+                ? null : Math.round(haversine(latitude, longitude, store.getLatitude(), store.getLongitude()) * 10d) / 10d;
+        return new StoreResponse(store.getId(), store.getName(), store.getCity(), store.getAddress(),
+                store.getLatitude(), store.getLongitude(), distance);
+    }
+
+    private int compareDistance(Double left, Double right) {
+        if (left == null && right == null) return 0;
+        if (left == null) return 1;
+        if (right == null) return -1;
+        return Double.compare(left, right);
+    }
+
+    private double haversine(double lat1, double lon1, double lat2, double lon2) {
+        double earthRadiusKm = 6371.0088;
+        double latDelta = Math.toRadians(lat2 - lat1);
+        double lonDelta = Math.toRadians(lon2 - lon1);
+        double a = Math.pow(Math.sin(latDelta / 2), 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.pow(Math.sin(lonDelta / 2), 2);
+        return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
     @Transactional(readOnly = true)

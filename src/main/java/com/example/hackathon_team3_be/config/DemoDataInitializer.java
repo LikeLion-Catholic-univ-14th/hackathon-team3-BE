@@ -18,9 +18,9 @@ public class DemoDataInitializer {
         return args -> {
             if (storeRepository.count() == 0) {
                 storeRepository.saveAll(List.of(
-                        new Store("MCM HAUS SEOUL", "Seoul", "7 Dosan-daero 99-gil, Gangnam-gu"),
-                        new Store("MCM Lotte Main", "Seoul", "81 Namdaemun-ro, Jung-gu"),
-                        new Store("MCM Shinsegae Gangnam", "Seoul", "176 Sinbanpo-ro, Seocho-gu")
+                        new Store("MCM HAUS SEOUL", "Seoul", "7 Dosan-daero 99-gil, Gangnam-gu", 37.5274, 127.0438),
+                        new Store("MCM Lotte Main", "Seoul", "81 Namdaemun-ro, Jung-gu", 37.5649, 126.9810),
+                        new Store("MCM Shinsegae Gangnam", "Seoul", "176 Sinbanpo-ro, Seocho-gu", 37.5049, 127.0049)
                 ));
             }
             if (productRepository.count() == 0) {
