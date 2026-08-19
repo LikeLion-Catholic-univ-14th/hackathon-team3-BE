@@ -33,9 +33,10 @@ Spring Boot 기반 Re:SENSE 해커톤 MVP 백엔드입니다. 고객 웹, Adviso
 - 동의한 고객의 이전 취향 이어가기
 - 교체 가능한 `IntentInterpreter`와 기본 규칙 기반 Intent 생성
 - 트랜잭션 커밋 이후 비동기 UNSEEN 생성
-- 외부 이미지 API가 없어도 동작하는 8개 PNG 랜덤 UNSEEN 데모 이미지
+- 외부 이미지 API가 없어도 동작하는 8개 PNG 기반 UNSEEN 후보 4개와 최종 선택
 - 매장/시간 슬롯 조회 및 중복 예약 방지
 - 방문 전 예약 변경·취소 및 취소 슬롯 재사용
+- 예약 확정 화면용 iCalendar(`.ics`) 다운로드
 - UNSEEN PASS 발급 및 매장 도착 인식
 - Advisor Intent Card와 Advisor Touch
 - 더미 상품 DB 기반 Personal Edit 3방향 생성
@@ -109,10 +110,11 @@ Spring Boot 기반 Re:SENSE 해커톤 MVP 백엔드입니다. 고객 웹, Adviso
 
 - `POST /api/v1/sessions/{sessionId}/intent`
 - `POST /api/v1/sessions/{sessionId}/unseen` - `202 Accepted`
-- `GET /api/v1/sessions/{sessionId}/unseen` - `READY`가 될 때까지 조회
+- `GET /api/v1/sessions/{sessionId}/unseen` - `READY`가 될 때까지 조회하고 최대 4개 `candidates` 표시
+- `PATCH /api/v1/sessions/{sessionId}/unseen/selection` - 결과 카드 1개 최종 선택
 
 실제 이미지 생성 API를 붙일 때는 `UnseenGenerationService`의 생성 부분만 교체하면 됩니다.
-현재 해커톤 모드는 `src/main/resources/static/assets/unseen`의 이미지 8개 중 하나를 무작위로 골라 URL을 저장합니다. 선택된 URL은 같은 세션을 다시 조회해도 유지됩니다.
+현재 해커톤 모드는 `src/main/resources/static/assets/unseen`의 이미지 8개를 섞어 최대 4개 후보를 만들고, 사용자가 선택한 후보를 최종 `imageUrl`로 저장합니다. 복수 후보가 있으면 선택 전에는 예약할 수 없습니다.
 
 ### 4. 예약
 
@@ -121,6 +123,7 @@ Spring Boot 기반 Re:SENSE 해커톤 MVP 백엔드입니다. 고객 웹, Adviso
 - `POST /api/v1/reservations`
 - `PATCH /api/v1/reservations/{reservationId}`
 - `DELETE /api/v1/reservations/{reservationId}`
+- `GET /api/v1/reservations/{reservationId}/calendar.ics`
 
 ```json
 {

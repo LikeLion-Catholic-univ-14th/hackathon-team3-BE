@@ -9,6 +9,8 @@ import com.example.hackathon_team3_be.service.ReservationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -63,5 +65,14 @@ public class ReservationController {
     ResponseEntity<Void> cancel(@PathVariable UUID reservationId) {
         reservationService.cancel(reservationId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping(value = "/reservations/{reservationId}/calendar.ics", produces = "text/calendar")
+    ResponseEntity<String> calendar(@PathVariable UUID reservationId) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/calendar;charset=UTF-8"))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"resense-" + reservationId + ".ics\"")
+                .body(reservationService.calendar(reservationId));
     }
 }

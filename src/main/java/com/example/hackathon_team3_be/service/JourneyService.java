@@ -8,12 +8,14 @@ import com.example.hackathon_team3_be.api.ApiDtos.IntentProfileResponse;
 import com.example.hackathon_team3_be.api.ApiDtos.MemoryItem;
 import com.example.hackathon_team3_be.api.ApiDtos.PreferenceRequest;
 import com.example.hackathon_team3_be.api.ApiDtos.SessionResponse;
+import com.example.hackathon_team3_be.api.ApiDtos.SelectUnseenCandidateRequest;
 import com.example.hackathon_team3_be.api.ApiDtos.UnseenResponse;
 import com.example.hackathon_team3_be.common.InvalidStateException;
 import com.example.hackathon_team3_be.common.NotFoundException;
 import com.example.hackathon_team3_be.domain.DomainEnums.ExperienceStatus;
 import com.example.hackathon_team3_be.domain.DomainEnums.GenerationStatus;
 import com.example.hackathon_team3_be.domain.ExperienceSession;
+import com.example.hackathon_team3_be.domain.UnseenCandidate;
 import com.example.hackathon_team3_be.repository.ExperienceSessionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -87,7 +89,8 @@ public class JourneyService {
         if (session.getIntentPurpose() == null) {
             throw new InvalidStateException("Intent Profile을 먼저 생성해 주세요.");
         }
-        if (session.getUnseenStatus() == GenerationStatus.PROCESSING) {
+        if (session.getUnseenStatus() == GenerationStatus.PROCESSING
+                || session.getUnseenStatus() == GenerationStatus.READY) {
             return ApiMapper.toUnseen(session);
         }
         String publicId = session.getUnseenPublicId() == null
@@ -105,6 +108,25 @@ public class JourneyService {
     @Transactional(readOnly = true)
     public UnseenResponse getUnseen(UUID sessionId) {
         return ApiMapper.toUnseen(findSession(sessionId));
+    }
+
+    @Transactional
+    public UnseenResponse selectUnseenCandidate(UUID sessionId, SelectUnseenCandidateRequest request) {
+        ExperienceSession session = findSession(sessionId);
+        if (session.getStatus().ordinal() >= ExperienceStatus.RESERVED.ordinal()) {
+            throw new InvalidStateException("예약 이후에는 UNSEEN 후보를 변경할 수 없습니다.");
+        }
+        if (session.getUnseenStatus() != GenerationStatus.READY) {
+            throw new InvalidStateException("UNSEEN 후보 생성 완료 후 선택할 수 있습니다.");
+        }
+        UnseenCandidate selected = session.getUnseenCandidates().stream()
+                .filter(candidate -> candidate.getId().equals(request.candidateId()))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("이 세션의 UNSEEN 후보를 찾을 수 없습니다."));
+        session.getUnseenCandidates().forEach(candidate -> candidate.setSelected(false));
+        selected.setSelected(true);
+        session.setUnseenImageUrl(selected.getImageUrl());
+        return ApiMapper.toUnseen(session);
     }
 
     @Transactional
@@ -168,6 +190,7 @@ public class JourneyService {
         session.setUnseenImageUrl(null);
         session.setUnseenPrompt(null);
         session.setUnseenError(null);
+        session.getUnseenCandidates().clear();
         session.setAdvisorPriority(null);
         session.setRevealStage(com.example.hackathon_team3_be.domain.DomainEnums.RevealStage.NOT_STARTED);
     }

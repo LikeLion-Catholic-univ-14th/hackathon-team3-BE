@@ -1,6 +1,6 @@
 # MCM Re:SENSE API 명세서
 
-현재 `develop` 브랜치의 Spring Boot 구현을 기준으로 작성했습니다.
+현재 `main` 브랜치의 Spring Boot 구현을 기준으로 작성했습니다.
 
 ## 1. 공통 규약
 
@@ -34,6 +34,7 @@
 | `404 Not Found` | 세션·예약·매장·PASS·이미지를 찾을 수 없음 |
 | `409 Conflict` | 동일 세션 재예약, 동일 매장·시간 중복 예약 |
 | `422 Unprocessable Entity` | 현재 Journey 상태에서 수행할 수 없는 요청 |
+| `413 Payload Too Large` | 15MB를 초과한 음성 파일 |
 | `500 Internal Server Error` | 처리되지 않은 서버 오류 |
 
 ## 2. API 목록
@@ -52,12 +53,14 @@
 | AI | POST | `/sessions/{sessionId}/intent` | Intent Profile 생성 |
 | AI | POST | `/sessions/{sessionId}/unseen` | 비동기 UNSEEN 생성 요청 |
 | AI | GET | `/sessions/{sessionId}/unseen` | UNSEEN 생성 상태 조회 |
+| AI | PATCH | `/sessions/{sessionId}/unseen/selection` | 4개 결과 후보 중 최종 선택 |
 | Reservation | GET | `/stores` | 예약 가능 매장 조회 |
 | Reservation | GET | `/stores/{storeId}/slots` | 날짜별 시간 슬롯 조회 |
 | Reservation | POST | `/reservations` | 매장 경험 예약 |
 | Reservation | GET | `/sessions/{sessionId}/reservation` | 세션 예약 조회 |
 | Reservation | PATCH | `/reservations/{reservationId}` | 방문 전 예약 변경 |
 | Reservation | DELETE | `/reservations/{reservationId}` | 방문 전 예약 취소 |
+| Reservation | GET | `/reservations/{reservationId}/calendar.ics` | 캘린더 추가 파일 다운로드 |
 | Advisor | GET | `/advisor/appointments` | 날짜별 예약 목록 |
 | Advisor | POST | `/advisor/passes/{passCode}/recognize` | PASS 인식/도착 처리 |
 | Advisor | GET | `/advisor/sessions/{sessionId}/intent-card` | Intent Card 조회 |
@@ -264,7 +267,9 @@ Response: `202 Accepted`
   "unseenId": "UNSEEN-50256B70",
   "status": "PROCESSING",
   "imageUrl": null,
-  "error": null
+  "error": null,
+  "candidates": [],
+  "selectedCandidateId": null
 }
 ```
 
@@ -281,12 +286,44 @@ Response: `200 OK`
   "unseenId": "UNSEEN-50256B70",
   "status": "READY",
   "imageUrl": "/assets/unseen/image4.png",
-  "error": null
+  "error": null,
+  "candidates": [
+    {
+      "candidateId": "732dea51-e286-47b5-9caf-8ac25f9cb260",
+      "imageUrl": "/assets/unseen/image4.png",
+      "shape": "Top Handle",
+      "size": "Mini",
+      "color": "Cognac",
+      "rank": 1,
+      "selected": false
+    }
+  ],
+  "selectedCandidateId": null
 }
 ```
 
 프론트엔드는 `status`가 `READY` 또는 `FAILED`가 될 때까지 polling할 수 있습니다. 권장 polling 간격은 500~1000ms입니다.
-해커톤 모드에서는 제공된 PNG 8개 중 하나를 무작위로 선택해 `imageUrl`에 저장합니다. 같은 세션을 조회하는 동안 선택 결과는 바뀌지 않습니다.
+해커톤 모드에서는 제공된 PNG 8개를 섞어 최대 4개 후보를 생성합니다. `imageUrl`은 기존 프론트 호환을 위한 첫 후보 미리보기이며, 최종 선택은 다음 API로 저장해야 합니다.
+
+### 3.7 UNSEEN 후보 선택
+
+`PATCH /sessions/{sessionId}/unseen/selection`
+
+Request:
+
+```json
+{
+  "candidateId": "732dea51-e286-47b5-9caf-8ac25f9cb260"
+}
+```
+
+Response: `200 OK`, 형식은 UNSEEN 상태 조회와 동일합니다. 선택한 후보의 `selected=true`, `selectedCandidateId`와 `imageUrl`이 해당 후보로 변경됩니다.
+
+선행 조건:
+
+- UNSEEN 상태가 `READY`여야 함
+- candidateId가 해당 session의 후보여야 함
+- 예약 이후에는 후보 변경 불가
 
 ## 4. Reservation API
 
@@ -345,6 +382,7 @@ Request:
 
 - 현재 시각보다 미래여야 함
 - UNSEEN 상태가 `READY`여야 함
+- 복수 후보가 생성된 경우 최종 후보를 하나 선택해야 함
 - 11:00~18:00 정각이어야 함
 - 세션당 예약은 1개
 - 동일 매장·동일 시간 중복 불가
@@ -368,6 +406,18 @@ Response: `201 Created`
 `GET /sessions/{sessionId}/reservation`
 
 Response: `200 OK`, 예약 생성 응답과 동일합니다.
+
+### 4.5 캘린더 파일 다운로드
+
+`GET /reservations/{reservationId}/calendar.ics`
+
+Request Body: 없음
+
+Response: `200 OK`
+
+- `Content-Type: text/calendar;charset=UTF-8`
+- `Content-Disposition: attachment; filename="resense-{reservationId}.ics"`
+- 일정 길이는 1시간이며 매장명·주소·UNSEEN PASS가 포함됩니다.
 
 ## 5. Advisor API
 

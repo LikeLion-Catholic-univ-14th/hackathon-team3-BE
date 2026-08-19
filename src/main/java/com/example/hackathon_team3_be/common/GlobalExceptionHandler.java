@@ -4,10 +4,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -41,6 +45,20 @@ public class GlobalExceptionHandler {
             fields.putIfAbsent(error.getField(), error.getDefaultMessage());
         }
         return response(HttpStatus.BAD_REQUEST, "요청값을 확인해 주세요.", request, fields);
+    }
+
+    @ExceptionHandler({
+            MissingServletRequestParameterException.class,
+            MethodArgumentTypeMismatchException.class,
+            HttpMessageNotReadableException.class
+    })
+    ResponseEntity<ApiError> handleMalformedRequest(Exception exception, HttpServletRequest request) {
+        return response(HttpStatus.BAD_REQUEST, "요청 형식 또는 필수 파라미터를 확인해 주세요.", request, Map.of());
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    ResponseEntity<ApiError> handleUploadTooLarge(MaxUploadSizeExceededException exception, HttpServletRequest request) {
+        return response(HttpStatus.PAYLOAD_TOO_LARGE, "음성 파일은 15MB 이하로 업로드해 주세요.", request, Map.of());
     }
 
     @ExceptionHandler(Exception.class)

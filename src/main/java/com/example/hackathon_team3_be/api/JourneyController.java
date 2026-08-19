@@ -7,6 +7,7 @@ import com.example.hackathon_team3_be.api.ApiDtos.FeedbackResponse;
 import com.example.hackathon_team3_be.api.ApiDtos.IntentProfileResponse;
 import com.example.hackathon_team3_be.api.ApiDtos.PreferenceRequest;
 import com.example.hackathon_team3_be.api.ApiDtos.SessionResponse;
+import com.example.hackathon_team3_be.api.ApiDtos.SelectUnseenCandidateRequest;
 import com.example.hackathon_team3_be.api.ApiDtos.UnseenResponse;
 import com.example.hackathon_team3_be.service.JourneyService;
 import jakarta.validation.Valid;
@@ -16,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -58,6 +60,14 @@ public class JourneyController {
     @GetMapping("/sessions/{sessionId}/unseen")
     UnseenResponse getUnseen(@PathVariable UUID sessionId) {
         return journeyService.getUnseen(sessionId);
+    }
+
+    @PatchMapping("/sessions/{sessionId}/unseen/selection")
+    UnseenResponse selectUnseenCandidate(
+            @PathVariable UUID sessionId,
+            @Valid @RequestBody SelectUnseenCandidateRequest request
+    ) {
+        return journeyService.selectUnseenCandidate(sessionId, request);
     }
 
     @PostMapping("/sessions/{sessionId}/feedback")

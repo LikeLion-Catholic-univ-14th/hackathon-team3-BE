@@ -24,6 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -33,6 +36,10 @@ import java.util.stream.IntStream;
 @Service
 @RequiredArgsConstructor
 public class ReservationService {
+
+    private static final DateTimeFormatter ICS_LOCAL = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
+    private static final DateTimeFormatter ICS_UTC = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'")
+            .withZone(ZoneOffset.UTC);
 
     private final StoreRepository storeRepository;
     private final ReservationRepository reservationRepository;
@@ -71,6 +78,10 @@ public class ReservationService {
         ExperienceSession session = journeyService.findSession(request.sessionId());
         if (session.getUnseenStatus() != GenerationStatus.READY) {
             throw new InvalidStateException("UNSEEN 생성 완료 후 예약할 수 있습니다.");
+        }
+        if (session.getUnseenCandidates().size() > 1
+                && session.getUnseenCandidates().stream().noneMatch(candidate -> candidate.isSelected())) {
+            throw new InvalidStateException("예약 전에 UNSEEN 후보를 하나 선택해 주세요.");
         }
         Reservation previous = reservationRepository.findBySessionId(session.getId()).orElse(null);
         if (previous != null && previous.getStatus() != ReservationStatus.CANCELLED) {
@@ -125,6 +136,33 @@ public class ReservationService {
     @Transactional(readOnly = true)
     public ReservationResponse getBySession(UUID sessionId) {
         return ApiMapper.toReservation(findBySession(sessionId));
+    }
+
+    @Transactional(readOnly = true)
+    public String calendar(UUID reservationId) {
+        Reservation reservation = findReservation(reservationId);
+        String location = escapeCalendarText(
+                reservation.getStore().getName() + ", " + reservation.getStore().getAddress()
+        );
+        return String.join("\r\n",
+                "BEGIN:VCALENDAR",
+                "VERSION:2.0",
+                "PRODID:-//MCM ReSENSE//Reservation//KO",
+                "CALSCALE:GREGORIAN",
+                "METHOD:PUBLISH",
+                "BEGIN:VEVENT",
+                "UID:" + reservation.getId() + "@resense.mcm",
+                "DTSTAMP:" + ICS_UTC.format(Instant.now()),
+                "DTSTART;TZID=Asia/Seoul:" + ICS_LOCAL.format(reservation.getScheduledAt()),
+                "DTEND;TZID=Asia/Seoul:" + ICS_LOCAL.format(reservation.getScheduledAt().plusHours(1)),
+                "SUMMARY:MCM Re:SENSE Experience",
+                "LOCATION:" + location,
+                "DESCRIPTION:" + escapeCalendarText("UNSEEN PASS: " + reservation.getPassCode()),
+                "STATUS:" + (reservation.getStatus() == ReservationStatus.CANCELLED ? "CANCELLED" : "CONFIRMED"),
+                "END:VEVENT",
+                "END:VCALENDAR",
+                ""
+        );
     }
 
     @Transactional(readOnly = true)
@@ -183,5 +221,13 @@ public class ReservationService {
             throw new InvalidStateException("현재 예약할 수 없는 매장입니다.");
         }
         return store;
+    }
+
+    private String escapeCalendarText(String value) {
+        return value.replace("\\", "\\\\")
+                .replace(";", "\\;")
+                .replace(",", "\\,")
+                .replace("\r", "")
+                .replace("\n", "\\n");
     }
 }

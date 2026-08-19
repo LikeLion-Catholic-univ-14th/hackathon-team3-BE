@@ -148,6 +148,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/InputInterpretationResponse'
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
         '422':
           $ref: '#/components/responses/InvalidState'
   /sessions/{sessionId}/preferences/continue:
@@ -229,6 +231,32 @@ paths:
                 $ref: '#/components/schemas/UnseenResponse'
         '404':
           $ref: '#/components/responses/NotFound'
+  /sessions/{sessionId}/unseen/selection:
+    parameters:
+      - $ref: '#/components/parameters/SessionId'
+    patch:
+      tags: [AI]
+      summary: 피그마 결과 카드에서 최종 UNSEEN 후보 선택
+      operationId: selectUnseenCandidate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SelectUnseenCandidateRequest'
+      responses:
+        '200':
+          description: 선택 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnseenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/InvalidState'
         '422':
           $ref: '#/components/responses/InvalidState'
     get:
@@ -352,6 +380,33 @@ paths:
       responses:
         '204':
           description: 취소 성공
+  /reservations/{reservationId}/calendar.ics:
+    parameters:
+      - name: reservationId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags: [Reservation]
+      summary: 예약 확인 화면의 캘린더 파일 다운로드
+      operationId: downloadReservationCalendar
+      responses:
+        '200':
+          description: iCalendar 파일
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              example: attachment; filename="resense-770e8400-e29b-41d4-a716-446655440000.ics"
+          content:
+            text/calendar:
+              schema:
+                type: string
+                example: "BEGIN:VCALENDAR\r\nVERSION:2.0\r\n..."
+        '404':
+          $ref: '#/components/responses/NotFound'
   /sessions/{sessionId}/reservation:
     parameters:
       - $ref: '#/components/parameters/SessionId'
@@ -674,6 +729,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiError'
+    PayloadTooLarge:
+      description: 업로드 파일 크기 제한 초과
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
   schemas:
     ExperienceStatus:
       type: string
@@ -882,6 +943,46 @@ components:
         error:
           type: string
           nullable: true
+        candidates:
+          type: array
+          description: READY일 때 피그마 결과 카드에 표시할 최대 4개 후보
+          items:
+            $ref: '#/components/schemas/UnseenCandidateResponse'
+        selectedCandidateId:
+          type: string
+          format: uuid
+          nullable: true
+    UnseenCandidateResponse:
+      type: object
+      properties:
+        candidateId:
+          type: string
+          format: uuid
+        imageUrl:
+          type: string
+          example: /assets/unseen/image4.png
+        shape:
+          type: string
+          example: Top Handle
+        size:
+          type: string
+          example: Mini
+        color:
+          type: string
+          example: Cognac
+        rank:
+          type: integer
+          example: 1
+        selected:
+          type: boolean
+          example: false
+    SelectUnseenCandidateRequest:
+      type: object
+      required: [candidateId]
+      properties:
+        candidateId:
+          type: string
+          format: uuid
     SessionResponse:
       type: object
       properties:

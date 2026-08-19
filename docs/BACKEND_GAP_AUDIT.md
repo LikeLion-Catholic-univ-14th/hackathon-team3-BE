@@ -1,6 +1,6 @@
 # Re:SENSE Backend 누락 점검 결과
 
-PDF/유저플로우와 기존 `develop` 구현을 대조한 결과입니다.
+PDF/유저플로우와 현재 `main` 구현을 대조한 결과입니다.
 
 ## 이번에 보완한 항목
 
@@ -17,8 +17,11 @@ PDF/유저플로우와 기존 `develop` 구현을 대조한 결과입니다.
 | 결과 생성 후 취향 수정 | 오래된 결과 잔존 가능 | Intent/UNSEEN/Advisor/Reveal 결과를 무효화하고 재생성하도록 상태 정리 |
 | 피그마 고객 프로필 | 이름 외 필드 없음 | 선택 전화번호·이메일·성별 저장 및 세션 응답 제공 |
 | 피그마 LOCK IT | 서버 선택지와 화면 문구 불일치 | `Shape / Color / Space / Attitude`로 일치시키고 Intent concern에 반영 |
-| 해커톤 이미지 생성 한도 | 동적 SVG 한 장 | 제공된 PNG 8개를 정적 리소스로 포함하고 생성마다 무작위 선택 |
+| 해커톤 이미지 생성 한도 | 동적 SVG 한 장 | 제공된 PNG 8개에서 최대 4개 후보 생성, 후보 속성·순위·최종 선택 저장 |
 | 위치 기반 매장 탐색 | 전체 매장 목록만 제공 | `GET /stores?city=Seoul` 선택 필터 추가, 권한 거부 시 기존 전체 목록 유지 |
+| 피그마 결과 카드 | 단일 `imageUrl`만 존재 | `candidates` 4개 응답과 `PATCH /unseen/selection`, 예약 전 선택 검증 추가 |
+| 예약 확정 Add to Calendar | API 없음 | `GET /reservations/{id}/calendar.ics`로 1시간 일정·매장·PASS 제공 |
+| 잘못된 날짜/UUID·대용량 음성 | 공통 500 가능 | 형식 오류 400, 15MB 초과 413 공통 오류 응답 추가 |
 
 ## 외부 연동이 필요한 운영 항목
 

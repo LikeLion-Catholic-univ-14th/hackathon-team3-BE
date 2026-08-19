@@ -6,12 +6,16 @@ import com.example.hackathon_team3_be.api.ApiDtos.PreferenceResponse;
 import com.example.hackathon_team3_be.api.ApiDtos.ReservationResponse;
 import com.example.hackathon_team3_be.api.ApiDtos.SessionResponse;
 import com.example.hackathon_team3_be.api.ApiDtos.UnseenResponse;
+import com.example.hackathon_team3_be.api.ApiDtos.UnseenCandidateResponse;
 import com.example.hackathon_team3_be.domain.AdvisorEdit;
 import com.example.hackathon_team3_be.domain.ExperienceSession;
 import com.example.hackathon_team3_be.domain.Reservation;
+import com.example.hackathon_team3_be.domain.UnseenCandidate;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 
 public final class ApiMapper {
 
@@ -75,11 +79,30 @@ public final class ApiMapper {
     }
 
     public static UnseenResponse toUnseen(ExperienceSession session) {
+        List<UnseenCandidateResponse> candidates = session.getUnseenCandidates().stream()
+                .sorted(Comparator.comparingInt(UnseenCandidate::getRank))
+                .map(candidate -> new UnseenCandidateResponse(
+                        candidate.getId(),
+                        candidate.getImageUrl(),
+                        candidate.getShape(),
+                        candidate.getSize(),
+                        candidate.getColor(),
+                        candidate.getRank(),
+                        candidate.isSelected()
+                ))
+                .toList();
+        UUID selectedCandidateId = session.getUnseenCandidates().stream()
+                .filter(UnseenCandidate::isSelected)
+                .map(UnseenCandidate::getId)
+                .findFirst()
+                .orElse(null);
         return new UnseenResponse(
                 session.getUnseenPublicId(),
                 session.getUnseenStatus(),
                 session.getUnseenImageUrl(),
-                session.getUnseenError()
+                session.getUnseenError(),
+                candidates,
+                selectedCandidateId
         );
     }
 

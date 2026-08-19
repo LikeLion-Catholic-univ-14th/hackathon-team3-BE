@@ -312,6 +312,7 @@ public class PreferenceInputService {
         session.setUnseenImageUrl(null);
         session.setUnseenPrompt(null);
         session.setUnseenError(null);
+        session.getUnseenCandidates().clear();
         session.setAdvisorPriority(null);
         session.setRevealStage(RevealStage.NOT_STARTED);
         session.setStatus(STEPS.stream().allMatch(step -> !isMissing(session, step.step()))

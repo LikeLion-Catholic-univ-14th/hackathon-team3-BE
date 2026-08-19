@@ -148,7 +148,25 @@ public final class ApiDtos {
             String unseenId,
             GenerationStatus status,
             String imageUrl,
-            String error
+            String error,
+            List<UnseenCandidateResponse> candidates,
+            UUID selectedCandidateId
+    ) {
+    }
+
+    public record UnseenCandidateResponse(
+            UUID candidateId,
+            String imageUrl,
+            String shape,
+            String size,
+            String color,
+            int rank,
+            boolean selected
+    ) {
+    }
+
+    public record SelectUnseenCandidateRequest(
+            @NotNull UUID candidateId
     ) {
     }
 

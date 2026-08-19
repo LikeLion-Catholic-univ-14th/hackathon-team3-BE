@@ -14,6 +14,7 @@ import java.util.Set;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -47,6 +48,8 @@ class UnseenRandomImageIntegrationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.steps[6].options[*].value",
                         contains("Shape", "Color", "Space", "Attitude")));
+        mockMvc.perform(get("/api/v1/stores/1/slots").param("date", "not-a-date"))
+                .andExpect(status().isBadRequest());
 
         String createBody = """
                 {
@@ -89,23 +92,64 @@ class UnseenRandomImageIntegrationTests {
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.unseenId", startsWith("UNSEEN-")));
 
-        String imageUrl = awaitReadyImage(sessionId);
+        JsonNode unseen = awaitReadyUnseen(sessionId);
+        String imageUrl = unseen.path("imageUrl").asText();
         if (!DEMO_IMAGES.contains(imageUrl)) {
             throw new AssertionError("Configured demo image was not selected: " + imageUrl);
         }
+        if (unseen.path("candidates").size() != 4) {
+            throw new AssertionError("Expected four UNSEEN candidates: " + unseen);
+        }
+        mockMvc.perform(post("/api/v1/reservations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "sessionId": "%s",
+                                  "storeId": 1,
+                                  "scheduledAt": "2099-08-22T14:00:00"
+                                }
+                                """.formatted(sessionId)))
+                .andExpect(status().isUnprocessableEntity());
+        String candidateId = unseen.path("candidates").get(1).path("candidateId").asText();
+        String selectedImageUrl = unseen.path("candidates").get(1).path("imageUrl").asText();
+        mockMvc.perform(patch("/api/v1/sessions/{sessionId}/unseen/selection", sessionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"candidateId\":\"" + candidateId + "\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.selectedCandidateId").value(candidateId))
+                .andExpect(jsonPath("$.imageUrl").value(selectedImageUrl))
+                .andExpect(jsonPath("$.candidates[1].selected").value(true));
         mockMvc.perform(get(imageUrl))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.IMAGE_PNG));
+
+        String reservationResponse = mockMvc.perform(post("/api/v1/reservations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "sessionId": "%s",
+                                  "storeId": 1,
+                                  "scheduledAt": "2099-08-22T14:00:00"
+                                }
+                                """.formatted(sessionId)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String reservationId = objectMapper.readTree(reservationResponse).path("reservationId").asText();
+        mockMvc.perform(get("/api/v1/reservations/{reservationId}/calendar.ics", reservationId))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.parseMediaType("text/calendar")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("BEGIN:VCALENDAR")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("PASS-")));
     }
 
-    private String awaitReadyImage(String sessionId) throws Exception {
+    private JsonNode awaitReadyUnseen(String sessionId) throws Exception {
         for (int attempt = 0; attempt < 100; attempt++) {
             String body = mockMvc.perform(get("/api/v1/sessions/{sessionId}/unseen", sessionId))
                     .andExpect(status().isOk())
                     .andReturn().getResponse().getContentAsString();
             JsonNode response = objectMapper.readTree(body);
             if ("READY".equals(response.path("status").asText())) {
-                return response.path("imageUrl").asText();
+                return response;
             }
             Thread.sleep(20);
         }

@@ -1,6 +1,6 @@
 # MCM Re:SENSE ERD
 
-이 문서는 현재 `develop` 브랜치에 구현된 JPA 엔티티를 기준으로 작성되었습니다.
+이 문서는 현재 `main` 브랜치에 구현된 JPA 엔티티를 기준으로 작성되었습니다.
 
 ## 1. 전체 ERD
 
@@ -9,6 +9,7 @@ erDiagram
     EXPERIENCE_SESSIONS ||--o| RESERVATIONS : "has"
     STORES ||--o{ RESERVATIONS : "accepts"
     EXPERIENCE_SESSIONS ||--o{ ADVISOR_EDITS : "receives"
+    EXPERIENCE_SESSIONS ||--o{ UNSEEN_CANDIDATES : "compares"
     PRODUCTS ||--o{ ADVISOR_EDITS : "selected for"
 
     EXPERIENCE_SESSIONS {
@@ -91,6 +92,18 @@ erDiagram
         VARCHAR_1000 rationale
         TIMESTAMP created_at
     }
+
+    UNSEEN_CANDIDATES {
+        UUID id PK
+        UUID session_id FK
+        VARCHAR_500 image_url
+        VARCHAR_50 shape
+        VARCHAR_30 size
+        VARCHAR_50 color
+        INT display_rank
+        BOOLEAN selected
+        TIMESTAMP created_at
+    }
 ```
 
 ## 2. 관계와 제약조건
@@ -101,6 +114,7 @@ erDiagram
 | `stores` | `reservations` | 1 : N | 한 매장은 여러 예약을 받습니다. |
 | `experience_sessions` | `advisor_edits` | 1 : N | 세션당 기본 3개 Personal Edit을 생성합니다. |
 | `products` | `advisor_edits` | 1 : N | 하나의 상품이 여러 고객 세션의 Edit에 사용될 수 있습니다. |
+| `experience_sessions` | `unseen_candidates` | 1 : N | 세션마다 최대 4개 결과 후보를 만들며 `(session_id, display_rank)`는 Unique입니다. |
 
 예약 테이블에는 `(store_id, scheduled_at, status)` 복합 Unique 제약조건 `uk_store_schedule_status`가 적용됩니다. 활성 예약 중복은 서비스 계층에서도 차단하며, 취소된 슬롯은 다시 예약할 수 있습니다.
 
@@ -124,7 +138,7 @@ flowchart LR
 - 취향: `silhouette`부터 `locked_attribute`까지
 - 입력 이력: 마지막 입력 모드, 자유 텍스트, 음성 transcript
 - Intent Profile: `intent_purpose`부터 `intent_summary`까지
-- UNSEEN: `unseen_status`, `unseen_public_id`, 이미지·프롬프트·오류
+- UNSEEN: `unseen_status`, `unseen_public_id`, 최종 이미지·프롬프트·오류와 `unseen_candidates` 최대 4개
 - 오프라인: `advisor_priority`, `reveal_stage`
 - 기억: Loved, Concern, Wants, 구매 결과
 
@@ -201,7 +215,7 @@ MVP 이후에는 다음 테이블 분리를 권장합니다.
 1. `customers`, `customer_consents`: 실제 회원·동의 이력
 2. `session_preferences`, `session_contexts`: 취향 및 다중 Context
 3. `intent_profiles`: AI 모델·프롬프트 버전과 생성 이력
-4. `unseens`: 재생성 및 Variation 이력
+4. `unseens`: 현재 `unseen_candidates`를 포함한 재생성·선택 이력 상위 애그리거트
 5. `feedback_items`: Loved, Concern, Wants 항목별 분석
 6. `inventory`: 매장별 실제 재고와 이동 상태
 7. `reveal_events`: Reveal 실행·단계별 이벤트 로그
