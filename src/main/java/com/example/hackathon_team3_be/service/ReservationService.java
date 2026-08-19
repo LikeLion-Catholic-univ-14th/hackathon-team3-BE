@@ -39,10 +39,17 @@ public class ReservationService {
     private final JourneyService journeyService;
 
     @Transactional(readOnly = true)
-    public List<StoreResponse> getStores() {
-        return storeRepository.findByActiveTrueOrderByNameAsc().stream()
+    public List<StoreResponse> getStores(String city) {
+        List<Store> stores = city == null || city.isBlank()
+                ? storeRepository.findByActiveTrueOrderByNameAsc()
+                : storeRepository.findByActiveTrueAndCityIgnoreCaseOrderByNameAsc(city.trim());
+        return stores.stream()
                 .map(store -> new StoreResponse(store.getId(), store.getName(), store.getCity(), store.getAddress()))
                 .toList();
+    }
+
+    public List<StoreResponse> getStores() {
+        return getStores(null);
     }
 
     @Transactional(readOnly = true)

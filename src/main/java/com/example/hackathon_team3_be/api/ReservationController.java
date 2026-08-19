@@ -32,8 +32,8 @@ public class ReservationController {
     private final ReservationService reservationService;
 
     @GetMapping("/stores")
-    List<StoreResponse> stores() {
-        return reservationService.getStores();
+    List<StoreResponse> stores(@RequestParam(required = false) String city) {
+        return reservationService.getStores(city);
     }
 
     @GetMapping("/stores/{storeId}/slots")

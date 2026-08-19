@@ -15,6 +15,9 @@ erDiagram
         UUID id PK
         VARCHAR_80 demo_customer_id "데모 고객 식별자"
         VARCHAR_80 customer_name
+        VARCHAR_30 phone
+        VARCHAR_160 email
+        VARCHAR_30 gender
         BOOLEAN data_consent
         VARCHAR_40 status "ExperienceStatus"
         VARCHAR silhouette
@@ -117,7 +120,7 @@ flowchart LR
     F --> G["Feedback / Purchase"]
 ```
 
-- 고객: `demo_customer_id`, `customer_name`, `data_consent`
+- 고객: `demo_customer_id`, `customer_name`, 선택 프로필(`phone`, `email`, `gender`), `data_consent`
 - 취향: `silhouette`부터 `locked_attribute`까지
 - 입력 이력: 마지막 입력 모드, 자유 텍스트, 음성 transcript
 - Intent Profile: `intent_purpose`부터 `intent_summary`까지

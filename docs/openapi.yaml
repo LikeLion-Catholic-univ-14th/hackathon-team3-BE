@@ -249,6 +249,13 @@ paths:
       tags: [Reservation]
       summary: 예약 가능 매장 조회
       operationId: getStores
+      parameters:
+        - name: city
+          in: query
+          required: false
+          description: 위치 권한 또는 직접 선택으로 얻은 도시명 필터
+          schema:
+            type: string
       responses:
         '200':
           description: 조회 성공
@@ -704,6 +711,22 @@ components:
           type: string
           maxLength: 80
           example: Lena
+        phone:
+          type: string
+          maxLength: 30
+          nullable: true
+          example: 010-1234-5678
+        email:
+          type: string
+          format: email
+          maxLength: 160
+          nullable: true
+          example: lena@example.com
+        gender:
+          type: string
+          maxLength: 30
+          nullable: true
+          example: FEMALE
         dataConsent:
           type: boolean
           example: true
@@ -734,6 +757,7 @@ components:
           example: [Work, Travel]
         lockedAttribute:
           type: string
+          enum: [Shape, Color, Space, Attitude]
           example: Shape
     PreferenceResponse:
       allOf:
@@ -854,7 +878,7 @@ components:
         imageUrl:
           type: string
           nullable: true
-          example: /api/v1/assets/unseen/UNSEEN-50256B70.svg
+          example: /assets/unseen/image4.png
         error:
           type: string
           nullable: true
@@ -868,6 +892,16 @@ components:
           type: string
         customerName:
           type: string
+        phone:
+          type: string
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+        gender:
+          type: string
+          nullable: true
         dataConsent:
           type: boolean
         status:

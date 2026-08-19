@@ -8,10 +8,12 @@ import com.example.hackathon_team3_be.domain.DomainEnums.InputStep;
 import com.example.hackathon_team3_be.domain.DomainEnums.PurchaseResult;
 import com.example.hackathon_team3_be.domain.DomainEnums.ReservationStatus;
 import com.example.hackathon_team3_be.domain.DomainEnums.RevealStage;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
@@ -29,8 +31,14 @@ public final class ApiDtos {
     public record CreateSessionRequest(
             @NotBlank @Size(max = 80) String demoCustomerId,
             @NotBlank @Size(max = 80) String customerName,
+            @Size(max = 30) String phone,
+            @Email @Size(max = 160) String email,
+            @Size(max = 30) String gender,
             boolean dataConsent
     ) {
+        public CreateSessionRequest(String demoCustomerId, String customerName, boolean dataConsent) {
+            this(demoCustomerId, customerName, null, null, null, dataConsent);
+        }
     }
 
     public record PreferenceRequest(
@@ -40,7 +48,7 @@ public final class ApiDtos {
             @NotBlank String color,
             @NotBlank String attitude,
             @NotEmpty List<@NotBlank String> contexts,
-            @NotBlank String lockedAttribute
+            @NotBlank @Pattern(regexp = "(?i)^(Shape|Color|Space|Attitude)$") String lockedAttribute
     ) {
     }
 
@@ -48,6 +56,9 @@ public final class ApiDtos {
             UUID sessionId,
             String demoCustomerId,
             String customerName,
+            String phone,
+            String email,
+            String gender,
             boolean dataConsent,
             ExperienceStatus status,
             PreferenceResponse preferences,

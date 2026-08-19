@@ -15,11 +15,15 @@ PDF/유저플로우와 기존 `develop` 구현을 대조한 결과입니다.
 | 예약 변경/취소 | 생성/조회만 존재 | 방문 전 변경·취소, 취소 후 재예약 및 슬롯 재사용 지원 |
 | 동의 없는 장기 기억 | 조회 시 구분 없음 | Memory 조회에서 동의 세션만 반환 |
 | 결과 생성 후 취향 수정 | 오래된 결과 잔존 가능 | Intent/UNSEEN/Advisor/Reveal 결과를 무효화하고 재생성하도록 상태 정리 |
+| 피그마 고객 프로필 | 이름 외 필드 없음 | 선택 전화번호·이메일·성별 저장 및 세션 응답 제공 |
+| 피그마 LOCK IT | 서버 선택지와 화면 문구 불일치 | `Shape / Color / Space / Attitude`로 일치시키고 Intent concern에 반영 |
+| 해커톤 이미지 생성 한도 | 동적 SVG 한 장 | 제공된 PNG 8개를 정적 리소스로 포함하고 생성마다 무작위 선택 |
+| 위치 기반 매장 탐색 | 전체 매장 목록만 제공 | `GET /stores?city=Seoul` 선택 필터 추가, 권한 거부 시 기존 전체 목록 유지 |
 
 ## 외부 연동이 필요한 운영 항목
 
 - 실제 STT 사용 시 `SPEECH_API_URL`, `SPEECH_API_KEY`, `SPEECH_MODEL` 설정
-- 실제 이미지 생성 모델 사용 시 `UnseenGenerationService`의 데모 SVG 생성부 교체
+- 실제 이미지 생성 모델 사용 시 `UnseenGenerationService`의 랜덤 데모 이미지 선택부 교체
 - 운영 DB 전환 시 H2 대신 PostgreSQL과 Flyway 마이그레이션 적용
 - 정식 회원 인증이 확정되면 `demoCustomerId`를 인증 주체 ID로 교체
 - 운영 환경의 개인정보 보존 기간, 삭제 API, 감사 로그 정책 확정

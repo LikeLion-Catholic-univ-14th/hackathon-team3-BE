@@ -156,6 +156,9 @@ Request:
 {
   "demoCustomerId": "demo-lena",
   "customerName": "Lena",
+  "phone": "010-1234-5678",
+  "email": "lena@example.com",
+  "gender": "FEMALE",
   "dataConsent": true
 }
 ```
@@ -164,6 +167,9 @@ Request:
 
 - `demoCustomerId`: 필수, 최대 80자
 - `customerName`: 필수, 최대 80자
+- `phone`: 선택, 최대 30자
+- `email`: 선택, 이메일 형식, 최대 160자
+- `gender`: 선택, 최대 30자
 - `dataConsent`: Boolean
 
 Response: `201 Created`
@@ -173,6 +179,9 @@ Response: `201 Created`
   "sessionId": "312d2b46-9b17-4930-a0c2-aaf982447166",
   "demoCustomerId": "demo-lena",
   "customerName": "Lena",
+  "phone": "010-1234-5678",
+  "email": "lena@example.com",
+  "gender": "FEMALE",
   "dataConsent": true,
   "status": "CREATED",
   "preferences": null,
@@ -271,18 +280,21 @@ Response: `200 OK`
 {
   "unseenId": "UNSEEN-50256B70",
   "status": "READY",
-  "imageUrl": "/api/v1/assets/unseen/UNSEEN-50256B70.svg",
+  "imageUrl": "/assets/unseen/image4.png",
   "error": null
 }
 ```
 
 프론트엔드는 `status`가 `READY` 또는 `FAILED`가 될 때까지 polling할 수 있습니다. 권장 polling 간격은 500~1000ms입니다.
+해커톤 모드에서는 제공된 PNG 8개 중 하나를 무작위로 선택해 `imageUrl`에 저장합니다. 같은 세션을 조회하는 동안 선택 결과는 바뀌지 않습니다.
 
 ## 4. Reservation API
 
 ### 4.1 매장 목록
 
 `GET /stores`
+
+선택 query: `city`. 예: `GET /stores?city=Seoul`. 위치 권한을 받지 못한 경우 query 없이 호출하면 전체 활성 매장을 반환합니다.
 
 Response: `200 OK`
 
@@ -611,7 +623,7 @@ Response: `200 OK`
 
 Response: `200 OK`, Content-Type `image/svg+xml;charset=UTF-8`.
 
-현재 외부 이미지 생성 API 없이도 데모가 동작하도록 취향 색상과 Intent 정보를 반영한 SVG를 동적으로 반환합니다.
+이 엔드포인트는 랜덤 이미지 목록이 비어 있을 때 사용하는 SVG fallback입니다. 기본 해커톤 설정에서는 `/assets/unseen/image.png`부터 `image8.png`까지의 정적 PNG가 반환됩니다.
 
 ### 8.2 상품 이미지
 

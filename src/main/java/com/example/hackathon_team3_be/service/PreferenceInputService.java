@@ -47,7 +47,7 @@ public class PreferenceInputService {
             step(InputStep.CONTEXTS, "사용 장면", "어떤 장면에서 주로 들고 싶나요? (복수 선택)", true,
                     option("Work", "출근/업무"), option("Daily", "일상"), option("Weekend", "주말"), option("Travel", "여행")),
             step(InputStep.LOCKED_ATTRIBUTE, "꼭 지킬 한 가지", "추천에서 절대 놓치고 싶지 않은 조건은 무엇인가요?", false,
-                    option("Shape", "형태"), option("Weight", "무게"), option("Color", "색상"), option("Capacity", "수납력"), option("Styling", "스타일링"))
+                    option("Shape", "형태"), option("Color", "색상"), option("Space", "수납 공간"), option("Attitude", "분위기"))
     );
 
     private final JourneyService journeyService;
@@ -165,9 +165,9 @@ public class PreferenceInputService {
                 Map.of("Work", List.of("work", "출근", "업무"), "Daily", List.of("daily", "일상"),
                         "Weekend", List.of("weekend", "주말"), "Travel", List.of("travel", "여행")));
         matchOne(result, InputStep.LOCKED_ATTRIBUTE, normalized,
-                Map.of("Shape", List.of("shape", "형태"), "Weight", List.of("weight", "무게", "가벼"),
-                        "Color", List.of("색상은 꼭", "컬러는 꼭"), "Capacity", List.of("capacity", "수납력"),
-                        "Styling", List.of("styling", "스타일링")));
+                Map.of("Shape", List.of("shape", "형태"), "Color", List.of("color", "색상은 꼭", "컬러는 꼭"),
+                        "Space", List.of("space", "수납 공간", "수납력"),
+                        "Attitude", List.of("attitude", "분위기", "무드")));
         return result;
     }
 

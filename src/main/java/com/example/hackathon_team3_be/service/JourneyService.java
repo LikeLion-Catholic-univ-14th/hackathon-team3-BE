@@ -36,6 +36,9 @@ public class JourneyService {
         ExperienceSession session = new ExperienceSession();
         session.setDemoCustomerId(request.demoCustomerId().trim());
         session.setCustomerName(request.customerName().trim());
+        session.setPhone(trimToNull(request.phone()));
+        session.setEmail(trimToNull(request.email()));
+        session.setGender(trimToNull(request.gender()));
         session.setDataConsent(request.dataConsent());
         return ApiMapper.toSession(sessionRepository.save(session));
     }
@@ -171,5 +174,9 @@ public class JourneyService {
 
     private String join(List<String> values) {
         return values == null ? null : String.join("|", values);
+    }
+
+    private String trimToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 }

@@ -21,13 +21,21 @@ public class RuleBasedIntentInterpreter implements IntentInterpreter {
                 ? "Relaxed / Modern"
                 : "Expressive / Contemporary";
         String signature = session.getStructurePreference() + " Structure / " + session.getColor();
-        String concern = session.getLockedAttribute().toLowerCase(Locale.ROOT).contains("shape")
-                || session.getLockedAttribute().contains("형태")
-                ? "Styling Versatility"
-                : "Weight and Practicality";
+        String concern = concernFor(session.getLockedAttribute());
         String purpose = contexts.replace("  ", " + ").replace(" ", " + ");
         String summary = "%s 환경을 오가며 사용할 수 있고, %s를 우선하면서 %s의 인상을 유지하는 %s 가방을 원합니다."
                 .formatted(contexts, priority, style, signature);
         return new IntentResult(purpose, priority, style, signature, concern, summary);
+    }
+
+    private String concernFor(String lockedAttribute) {
+        String normalized = lockedAttribute.toLowerCase(Locale.ROOT);
+        if (normalized.contains("shape") || normalized.contains("형태")) return "Styling Versatility";
+        if (normalized.contains("color") || normalized.contains("색")) return "Color Coordination";
+        if (normalized.contains("space") || normalized.contains("수납")) return "Capacity and Practicality";
+        if (normalized.contains("attitude") || normalized.contains("무드") || normalized.contains("분위기")) {
+            return "Personal Expression";
+        }
+        return "Practicality";
     }
 }

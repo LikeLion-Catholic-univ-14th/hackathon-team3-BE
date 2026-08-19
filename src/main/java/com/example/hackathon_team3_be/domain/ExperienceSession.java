@@ -39,6 +39,15 @@ public class ExperienceSession {
     @Column(nullable = false, length = 80)
     private String customerName;
 
+    @Column(length = 30)
+    private String phone;
+
+    @Column(length = 160)
+    private String email;
+
+    @Column(length = 30)
+    private String gender;
+
     @Column(nullable = false)
     private boolean dataConsent;
 

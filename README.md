@@ -33,7 +33,7 @@ Spring Boot 기반 Re:SENSE 해커톤 MVP 백엔드입니다. 고객 웹, Adviso
 - 동의한 고객의 이전 취향 이어가기
 - 교체 가능한 `IntentInterpreter`와 기본 규칙 기반 Intent 생성
 - 트랜잭션 커밋 이후 비동기 UNSEEN 생성
-- 외부 이미지 API가 없어도 동작하는 동적 SVG 데모 이미지
+- 외부 이미지 API가 없어도 동작하는 8개 PNG 랜덤 UNSEEN 데모 이미지
 - 매장/시간 슬롯 조회 및 중복 예약 방지
 - 방문 전 예약 변경·취소 및 취소 슬롯 재사용
 - UNSEEN PASS 발급 및 매장 도착 인식
@@ -53,9 +53,14 @@ Spring Boot 기반 Re:SENSE 해커톤 MVP 백엔드입니다. 고객 웹, Adviso
 {
   "demoCustomerId": "demo-lena",
   "customerName": "Lena",
+  "phone": "010-1234-5678",
+  "email": "lena@example.com",
+  "gender": "FEMALE",
   "dataConsent": true
 }
 ```
+
+`phone`, `email`, `gender`는 피그마 프로필 화면용 선택 필드입니다. 기존처럼 세 필드 없이 `demoCustomerId`, `customerName`, `dataConsent`만 보내도 동작합니다.
 
 ### 2. 취향 저장
 
@@ -107,10 +112,11 @@ Spring Boot 기반 Re:SENSE 해커톤 MVP 백엔드입니다. 고객 웹, Adviso
 - `GET /api/v1/sessions/{sessionId}/unseen` - `READY`가 될 때까지 조회
 
 실제 이미지 생성 API를 붙일 때는 `UnseenGenerationService`의 생성 부분만 교체하면 됩니다.
+현재 해커톤 모드는 `src/main/resources/static/assets/unseen`의 이미지 8개 중 하나를 무작위로 골라 URL을 저장합니다. 선택된 URL은 같은 세션을 다시 조회해도 유지됩니다.
 
 ### 4. 예약
 
-- `GET /api/v1/stores`
+- `GET /api/v1/stores` (`city=Seoul` 선택 필터 지원)
 - `GET /api/v1/stores/{storeId}/slots?date=2026-08-15`
 - `POST /api/v1/reservations`
 - `PATCH /api/v1/reservations/{reservationId}`
